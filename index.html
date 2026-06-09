@@ -3,22 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Future MLA — Simulation Prototype (Party Funds: Local Sources)</title>
-<!-- Chart.js -->
+<title>Future MLA — Simulation Prototype (Local Party Funds)</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  /* ---------- Professional UI: variables ---------- */
   :root{
-    --bg:#f4f6fb;
-    --card:#ffffff;
-    --muted:#6b7280;
-    --accent:#0b6efd;
-    --accent-2:#0f766e;
-    --danger:#dc2626;
-    --glass: rgba(255,255,255,0.85);
-    --shadow: 0 8px 24px rgba(12,15,30,0.08);
-    --radius:12px;
-    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", monospace;
+    --bg:#f4f6fb; --card:#ffffff; --muted:#6b7280; --accent:#0b6efd; --accent-2:#0f766e;
+    --danger:#dc2626; --glass: rgba(255,255,255,0.85); --shadow: 0 8px 24px rgba(12,15,30,0.08);
+    --radius:12px; --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", monospace;
   }
   html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Noto Sans",sans-serif;background:linear-gradient(180deg,#eef2ff 0%, #f7fafc 100%);color:#0f172a}
   .app{max-width:1200px;margin:28px auto;padding:18px;display:grid;grid-template-columns:1fr;gap:18px}
@@ -30,7 +21,6 @@
   .grid{display:grid;grid-template-columns:360px 1fr;gap:18px;margin-top:8px}
   @media (max-width:980px){ .grid{grid-template-columns:1fr} }
 
-  /* left column */
   .panel{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
   .section-title{font-size:14px;margin:0 0 10px 0}
   .muted{color:var(--muted);font-size:13px}
@@ -39,27 +29,23 @@
   .kpi .label{font-size:12px;color:var(--muted)}
   .kpi .value{font-weight:700;font-size:18px;margin-top:6px}
 
-  /* moves */
   .moves{display:flex;flex-direction:column;gap:8px}
   .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:1px solid #e6eefc;background:#fff;cursor:pointer;font-weight:600}
   .btn.primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none}
   .btn.ghost{background:transparent}
   .move-meta{font-size:12px;color:var(--muted);margin-left:auto}
 
-  /* donors */
   .donor{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:10px;background:#fbfdff;border:1px solid #eef6f6}
   .donor .left{display:flex;gap:10px;align-items:center}
   .avatar{width:40px;height:40px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent)}
   .donor .meta{font-size:13px;color:var(--muted)}
   .donor .action{display:flex;gap:8px}
 
-  /* voter list */
   .voter{padding:10px;border-radius:10px;background:#fff;border:1px solid #eef2ff;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
   .voter .left{display:flex;flex-direction:column}
   .voter .name{font-weight:700}
   .voter .small{font-size:13px;color:var(--muted)}
 
-  /* right column */
   .dashboard{display:flex;flex-direction:column;gap:12px}
   .chart-card{padding:12px;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfdff);box-shadow:var(--shadow);border:1px solid #eef2ff}
   .controls{display:flex;gap:8px;align-items:center}
@@ -67,7 +53,6 @@
   .log{height:160px;overflow:auto;padding:10px;border-radius:10px;background:#fff;border:1px solid #eef2ff;font-size:13px;color:var(--muted)}
   .footer{font-size:13px;color:var(--muted);margin-top:8px}
 
-  /* small helpers */
   .row{display:flex;gap:8px;align-items:center}
   .chip{padding:6px 8px;border-radius:999px;background:#f1f5f9;font-size:12px;color:var(--muted)}
   .badge{background:#eef2ff;color:var(--accent);padding:6px 8px;border-radius:8px;font-weight:700}
@@ -81,7 +66,7 @@
       <div class="logo">MLA</div>
       <div>
         <h1>Future MLA — Mayiladuthurai Prototype</h1>
-        <div class="subtitle">Indicator‑driven civic simulation • Party funds from local sources • Classroom ready</div>
+        <div class="subtitle">Indicator‑driven civic simulation • Local party funds • Classroom ready</div>
       </div>
     </div>
     <div class="row">
@@ -91,7 +76,6 @@
   </header>
 
   <div class="grid">
-    <!-- LEFT: controls, indicators, moves, donors -->
     <div class="panel">
       <h3 class="section-title">Local Indicators</h3>
       <div id="indicators" class="muted"></div>
@@ -99,7 +83,7 @@
       <h3 class="section-title" style="margin-top:12px">Campaign Moves</h3>
       <div id="moves" class="moves"></div>
 
-      <h3 class="section-title" style="margin-top:12px">Fundraising Moves (sources of Party Funds)</h3>
+      <h3 class="section-title" style="margin-top:12px">Fundraising Moves (Party Funds sources)</h3>
       <div id="fundMoves" class="moves"></div>
 
       <h3 class="section-title" style="margin-top:12px">Donor Panel</h3>
@@ -117,9 +101,10 @@
 
       <h3 class="section-title" style="margin-top:12px">Event Log</h3>
       <div id="log" class="log"></div>
+
+      <div class="footer">Party funds modeled as a separate pool. Transfers to campaign budget have transparency tradeoffs and audit risk.</div>
     </div>
 
-    <!-- RIGHT: analytics and controls -->
     <div class="dashboard">
       <div class="chart-card">
         <div style="display:flex;justify-content:space-between;align-items:center">
@@ -167,7 +152,7 @@
             <input id="auditSensitivity" type="range" min="0" max="10" value="2" />
           </div>
 
-          <div style="margin-top:10px" class="muted">Teacher overrides and data editing available in settings (or via code for prototype).</div>
+          <div style="margin-top:10px" class="muted">Teacher overrides and data editing available in settings or via code for prototype.</div>
         </div>
       </div>
 
@@ -183,14 +168,15 @@
   </div>
 </div>
 
-<!-- ===========================
-     Script: Simulation engine
-     - Keeps previous indicator-driven voter init
-     - Adds Party Funds sources: local broker, shop owner, contractor, union leader, temple committee, diaspora, philanthropist, small donors
-     - Professional UI bindings and polished logs
-   =========================== -->
 <script>
-/* ---------- Indicators (illustrative) ---------- */
+/* ============================
+   Full Prototype: indicator-driven + local party funds sources
+   - Keeps previous simulation logic
+   - Adds local fundraising sources: broker, shopOwner, contractor, union, temple, diaspora, philanthropist, small donors
+   - Professional UI bindings
+   ============================ */
+
+/* ---------- Indicators (editable) ---------- */
 let indicators = {
   povertyRate: 0.18,
   schoolAttendance: 0.86,
