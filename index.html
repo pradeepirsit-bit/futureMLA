@@ -3,23 +3,22 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Future MLA — Simulation Prototype (Local Party Funds)</title>
+<title>Future MLA — Simulation Prototype (Analytics Dashboard)</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root{
     --bg:#f4f6fb; --card:#ffffff; --muted:#6b7280; --accent:#0b6efd; --accent-2:#0f766e;
-    --danger:#dc2626; --glass: rgba(255,255,255,0.85); --shadow: 0 8px 24px rgba(12,15,30,0.08);
-    --radius:12px; --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", monospace;
+    --danger:#dc2626; --shadow: 0 8px 24px rgba(12,15,30,0.08); --radius:12px;
   }
   html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Noto Sans",sans-serif;background:linear-gradient(180deg,#eef2ff 0%, #f7fafc 100%);color:#0f172a}
-  .app{max-width:1200px;margin:28px auto;padding:18px;display:grid;grid-template-columns:1fr;gap:18px}
+  .app{max-width:1200px;margin:20px auto;padding:18px;display:grid;grid-template-columns:1fr;gap:18px}
   header{display:flex;align-items:center;justify-content:space-between;gap:12px}
   .brand{display:flex;align-items:center;gap:12px}
-  .logo{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;box-shadow:var(--shadow)}
+  .logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;box-shadow:var(--shadow)}
   h1{font-size:18px;margin:0}
   .subtitle{font-size:13px;color:var(--muted)}
-  .grid{display:grid;grid-template-columns:360px 1fr;gap:18px;margin-top:8px}
-  @media (max-width:980px){ .grid{grid-template-columns:1fr} }
+  .layout{display:grid;grid-template-columns:360px 1fr;gap:18px;margin-top:12px}
+  @media (max-width:980px){ .layout{grid-template-columns:1fr} }
 
   .panel{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
   .section-title{font-size:14px;margin:0 0 10px 0}
@@ -32,7 +31,6 @@
   .moves{display:flex;flex-direction:column;gap:8px}
   .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:1px solid #e6eefc;background:#fff;cursor:pointer;font-weight:600}
   .btn.primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none}
-  .btn.ghost{background:transparent}
   .move-meta{font-size:12px;color:var(--muted);margin-left:auto}
 
   .donor{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:10px;background:#fbfdff;border:1px solid #eef6f6}
@@ -46,17 +44,29 @@
   .voter .name{font-weight:700}
   .voter .small{font-size:13px;color:var(--muted)}
 
-  .dashboard{display:flex;flex-direction:column;gap:12px}
-  .chart-card{padding:12px;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfdff);box-shadow:var(--shadow);border:1px solid #eef2ff}
-  .controls{display:flex;gap:8px;align-items:center}
-  .range{width:100%}
-  .log{height:160px;overflow:auto;padding:10px;border-radius:10px;background:#fff;border:1px solid #eef2ff;font-size:13px;color:var(--muted)}
-  .footer{font-size:13px;color:var(--muted);margin-top:8px}
+  /* Analytics improvements */
+  .analytics-top{display:flex;gap:12px;align-items:center;justify-content:space-between}
+  .summary-cards{display:flex;gap:12px}
+  .summary-card{min-width:160px;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid #eef2ff;text-align:left}
+  .summary-card .title{font-size:12px;color:var(--muted)}
+  .summary-card .big{font-weight:800;font-size:20px;margin-top:6px}
 
-  .row{display:flex;gap:8px;align-items:center}
-  .chip{padding:6px 8px;border-radius:999px;background:#f1f5f9;font-size:12px;color:var(--muted)}
-  .badge{background:#eef2ff;color:var(--accent);padding:6px 8px;border-radius:8px;font-weight:700}
-  code{font-family:var(--mono);background:#f8fafc;padding:2px 6px;border-radius:6px;font-size:12px}
+  .chart-row{display:grid;grid-template-columns:1fr 320px;gap:12px;margin-top:12px}
+  @media (max-width:980px){ .chart-row{grid-template-columns:1fr} }
+
+  .mini-table{width:100%;border-collapse:collapse;font-size:13px}
+  .mini-table th, .mini-table td{padding:8px;border-bottom:1px solid #f1f5f9;text-align:left}
+  .mini-table th{font-size:12px;color:var(--muted)}
+  .controls{display:flex;gap:8px;align-items:center;margin-top:10px}
+  .slider-row{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .play-btn{width:44px;height:44px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+  .filter-chip{padding:6px 8px;border-radius:999px;background:#f1f5f9;font-size:12px;color:var(--muted);cursor:pointer}
+  .heatmap{display:flex;gap:6px;align-items:center;margin-top:8px}
+  .heat-cell{width:18px;height:18px;border-radius:4px}
+  .legend{display:flex;gap:6px;align-items:center;margin-top:6px;font-size:12px;color:var(--muted)}
+  .timeline{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .history-list{max-height:160px;overflow:auto;padding:6px;border-radius:8px;background:#fff;border:1px solid #eef2ff}
+  .history-item{padding:8px;border-bottom:1px solid #f1f5f9;font-size:13px}
 </style>
 </head>
 <body>
@@ -65,103 +75,124 @@
     <div class="brand">
       <div class="logo">MLA</div>
       <div>
-        <h1>Future MLA — Mayiladuthurai Prototype</h1>
-        <div class="subtitle">Indicator‑driven civic simulation • Local party funds • Classroom ready</div>
+        <h1>Future MLA — Analytics Dashboard</h1>
+        <div class="subtitle">Clear, teacher‑friendly view of simulation data and history</div>
       </div>
     </div>
     <div class="row">
-      <div class="chip">Tamil UI ready</div>
-      <div class="chip">Offline friendly</div>
+      <div class="chip">Mayiladuthurai prototype</div>
     </div>
   </header>
 
-  <div class="grid">
+  <div class="layout">
+    <!-- Left column: controls, moves, donors, history -->
     <div class="panel">
-      <h3 class="section-title">Local Indicators</h3>
-      <div id="indicators" class="muted"></div>
+      <h3 class="section-title">Scenario & Controls</h3>
+      <div class="muted">Select scenario and run the simulation. Use the timeline to inspect past turns.</div>
+
+      <div style="margin-top:10px">
+        <select id="scenarioSelect" style="width:100%;padding:10px;border-radius:8px;border:1px solid #eef2ff">
+          <option value="default">Baseline — Mayiladuthurai</option>
+          <option value="flood">Monsoon Floods</option>
+          <option value="farmers">Farmer Protest</option>
+        </select>
+      </div>
 
       <h3 class="section-title" style="margin-top:12px">Campaign Moves</h3>
       <div id="moves" class="moves"></div>
 
-      <h3 class="section-title" style="margin-top:12px">Fundraising Moves (Party Funds sources)</h3>
+      <h3 class="section-title" style="margin-top:12px">Fundraising Moves</h3>
       <div id="fundMoves" class="moves"></div>
 
       <h3 class="section-title" style="margin-top:12px">Donor Panel</h3>
       <div id="donorList" style="display:flex;flex-direction:column;gap:8px"></div>
 
-      <h3 class="section-title" style="margin-top:12px">Quick KPIs</h3>
-      <div class="kpis">
-        <div class="kpi"><div class="label">Campaign Budget</div><div id="k_budget" class="value">₹0</div></div>
-        <div class="kpi"><div class="label">Party Funds</div><div id="k_party" class="value">₹0</div></div>
-        <div class="kpi"><div class="label">Reputation</div><div id="k_rep" class="value">0</div></div>
-      </div>
-
-      <h3 class="section-title" style="margin-top:12px">Voter Groups</h3>
-      <div id="voterList"></div>
-
-      <h3 class="section-title" style="margin-top:12px">Event Log</h3>
-      <div id="log" class="log"></div>
-
-      <div class="footer">Party funds modeled as a separate pool. Transfers to campaign budget have transparency tradeoffs and audit risk.</div>
+      <h3 class="section-title" style="margin-top:12px">History (quick view)</h3>
+      <div class="history-list" id="historyList"></div>
     </div>
 
-    <div class="dashboard">
-      <div class="chart-card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-weight:700">Analytics Dashboard</div>
-            <div class="muted" style="margin-top:4px">Vote share by voter archetype • Time series</div>
+    <!-- Right column: analytics -->
+    <div>
+      <div class="panel analytics-top">
+        <div>
+          <div style="font-weight:700">Simulation Summary</div>
+          <div class="muted" style="margin-top:4px">At-a-glance KPIs and quick filters</div>
+        </div>
+        <div class="summary-cards">
+          <div class="summary-card">
+            <div class="title">Campaign Budget</div>
+            <div id="cardBudget" class="big">₹0</div>
           </div>
-          <div class="badge" id="turnBadge">Turn 0</div>
+          <div class="summary-card">
+            <div class="title">Party Funds</div>
+            <div id="cardParty" class="big">₹0</div>
+          </div>
+          <div class="summary-card">
+            <div class="title">Reputation</div>
+            <div id="cardRep" class="big">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">Vote Share Over Time</div>
+          <div class="muted">Interactive • hover for details</div>
         </div>
         <div style="margin-top:12px">
           <canvas id="voteChart" height="220"></canvas>
         </div>
-      </div>
 
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div class="muted">Controls</div>
-            <div style="font-weight:700">Spend intensity & Party actions</div>
-          </div>
-          <div class="chip">Professional UI</div>
-        </div>
+        <div class="chart-row">
+          <div style="margin-top:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-weight:700">Voter Sentiment Heatmap</div>
+              <div class="muted">Sentiment by group</div>
+            </div>
+            <div class="heatmap" id="heatmapRow" style="margin-top:8px"></div>
+            <div class="legend">
+              <div style="width:12px;height:12px;background:#fee2e2;border-radius:3px"></div><div class="muted">Low</div>
+              <div style="width:12px;height:12px;background:#fef3c7;border-radius:3px;margin-left:8px"></div><div class="muted">Mid</div>
+              <div style="width:12px;height:12px;background:#dcfce7;border-radius:3px;margin-left:8px"></div><div class="muted">High</div>
+            </div>
 
-        <div style="margin-top:12px" class="row">
-          <input id="spendAmount" class="range" type="range" min="0" max="100" value="50" />
-        </div>
-
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button id="endTurn" class="btn primary">End Turn</button>
-          <button id="resetBtn" class="btn">Reset</button>
-        </div>
-
-        <div style="margin-top:12px" class="settings">
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-            <button id="requestPartyFunds" class="btn">Request Party Match</button>
-            <button id="transferFromParty" class="btn primary">Transfer to Campaign</button>
-            <select id="transferTransparency" style="padding:8px;border-radius:8px;border:1px solid #eef2ff">
-              <option value="transparent">Transparent</option>
-              <option value="opaque">Opaque (faster)</option>
-            </select>
+            <div style="margin-top:12px">
+              <div style="font-weight:700">Voter Group Table</div>
+              <table class="mini-table" id="voterTable" style="margin-top:8px">
+                <thead><tr><th>Group</th><th>Size</th><th>Sentiment</th><th>Responsiveness</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
           </div>
 
-          <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
-            <label class="muted">Audit sensitivity</label>
-            <input id="auditSensitivity" type="range" min="0" max="10" value="2" />
+          <div style="margin-top:12px">
+            <div style="font-weight:700">Controls & Timeline</div>
+            <div class="controls" style="margin-top:8px">
+              <button id="playBtn" class="play-btn">▶</button>
+              <button id="stepBack" class="btn">⟲</button>
+              <button id="stepForward" class="btn">⟳</button>
+            </div>
+
+            <div class="slider-row">
+              <input id="timeline" type="range" min="0" max="0" value="0" style="width:100%" />
+            </div>
+
+            <div style="margin-top:10px">
+              <div style="font-weight:700">Quick Filters</div>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <div class="filter-chip" data-filter="all">All</div>
+                <div class="filter-chip" data-filter="funds">Funds</div>
+                <div class="filter-chip" data-filter="sentiment">Sentiment</div>
+                <div class="filter-chip" data-filter="voters">Voters</div>
+              </div>
+            </div>
+
+            <div style="margin-top:12px">
+              <div style="font-weight:700">Event Log</div>
+              <div id="log" class="log" style="margin-top:8px"></div>
+            </div>
           </div>
-
-          <div style="margin-top:10px" class="muted">Teacher overrides and data editing available in settings or via code for prototype.</div>
         </div>
-      </div>
-
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-weight:700">Vote Breakdown</div>
-          <div class="muted">Normalized by sentiment × size</div>
-        </div>
-        <div id="voteBreakdown" style="margin-top:10px" class="muted"></div>
       </div>
 
     </div>
@@ -170,13 +201,13 @@
 
 <script>
 /* ============================
-   Full Prototype: indicator-driven + local party funds sources
-   - Keeps previous simulation logic
-   - Adds local fundraising sources: broker, shopOwner, contractor, union, temple, diaspora, philanthropist, small donors
-   - Professional UI bindings
+   Enhanced Analytics Dashboard
+   - Keeps all previous simulation logic and data model
+   - Adds user-friendly analytics: summary cards, heatmap, voter table, timeline playback, history list
+   - All core mechanics preserved: indicators, moves, fundraising, party funds, audits
    ============================ */
 
-/* ---------- Indicators (editable) ---------- */
+/* ---------- Indicators (illustrative) ---------- */
 let indicators = {
   povertyRate: 0.18,
   schoolAttendance: 0.86,
@@ -196,7 +227,7 @@ const MAPPING = {
   clampMax: 0.95
 };
 
-/* ---------- Voter archetypes ---------- */
+/* ---------- Archetypes & moves (unchanged) ---------- */
 const archetypesBase = [
   { id: 'youth', name: 'Youth (18-30)', size: 0.22 },
   { id: 'farmers', name: 'Farmers', size: 0.20 },
@@ -206,7 +237,6 @@ const archetypesBase = [
   { id: 'business', name: 'Small Business', size: 0.12 }
 ];
 
-/* ---------- Campaign moves ---------- */
 const MOVES = {
   road:   { name: 'Repair Roads', cost: 80, effects: { farmers: 0.06, business: 0.04, seniors: 0.03 } },
   school: { name: 'School Grants', cost: 60, effects: { youth: 0.07, women: 0.05 } },
@@ -215,7 +245,6 @@ const MOVES = {
   ad:     { name: 'Local Ads', cost: 20, effects: { business: 0.03, youth: 0.02 } }
 };
 
-/* ---------- Fundraising moves (party funds sources) ---------- */
 const FUND_MOVES = {
   fundraiser: { name: 'Host Fundraiser', cost: 20, baseRaise: 120, reach: { broker: 0.6, shopOwner: 0.6, contractor: 0.5, philanthropist: 0.4 } },
   crowdfunding: { name: 'Crowdfunding Drive', cost: 5, baseRaise: 40, reach: { smallDonor: 0.9 } },
@@ -225,7 +254,6 @@ const FUND_MOVES = {
   shopDrive: { name: 'Shop Owners Drive', cost: 8, baseRaise: 90, reach: { shopOwner: 0.9 } }
 };
 
-/* ---------- Donor archetypes (expanded local sources) ---------- */
 const DONORS = [
   { id: 'broker', name: 'Local Broker', baseProb: 0.45, maxGift: 200, responsiveness: 0.9 },
   { id: 'shopOwner', name: 'Shop Owner', baseProb: 0.6, maxGift: 80, responsiveness: 0.8 },
@@ -245,13 +273,13 @@ let state = {
   corruptionScore: 0,
   turn: 0,
   voterGroups: [],
-  history: [],
-  auditSensitivity: 0.02
+  history: [], // snapshots for timeline
+  playing: false
 };
 
 /* ---------- DOM refs ---------- */
 const refs = {
-  indicators: document.getElementById('indicators'),
+  scenarioSelect: document.getElementById('scenarioSelect'),
   moves: document.getElementById('moves'),
   fundMoves: document.getElementById('fundMoves'),
   donorList: document.getElementById('donorList'),
@@ -268,48 +296,110 @@ const refs = {
   transferFromParty: document.getElementById('transferFromParty'),
   transferTransparency: document.getElementById('transferTransparency'),
   auditSensitivity: document.getElementById('auditSensitivity'),
-  turnBadge: document.getElementById('turnBadge')
+  turnBadge: document.getElementById('turnBadge'),
+  cardBudget: document.getElementById('cardBudget'),
+  cardParty: document.getElementById('cardParty'),
+  cardRep: document.getElementById('cardRep'),
+  voteChartCanvas: document.getElementById('voteChart'),
+  heatmapRow: document.getElementById('heatmapRow'),
+  voterTableBody: document.querySelector('#voterTable tbody'),
+  playBtn: document.getElementById('playBtn'),
+  timeline: document.getElementById('timeline'),
+  historyList: document.getElementById('historyList'),
+  scenarioSelectEl: document.getElementById('scenarioSelect'),
+  filterChips: document.querySelectorAll('.filter-chip'),
+  stepBack: document.getElementById('stepBack'),
+  stepForward: document.getElementById('stepForward')
 };
 
 /* ---------- Chart setup ---------- */
-const ctx = document.getElementById('voteChart').getContext('2d');
+const ctx = refs.voteChartCanvas.getContext('2d');
 let voteChart = new Chart(ctx, {
   type: 'line',
   data: { labels: [], datasets: [] },
   options: {
     responsive: true,
-    plugins: { legend: { position: 'bottom' } },
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth:12 } },
+      tooltip: { mode: 'index', intersect: false }
+    },
+    interaction: { mode: 'nearest', axis: 'x', intersect: false },
     scales: { y: { beginAtZero: true, max: 100 } }
   }
 });
 
-/* ---------- UI renderers ---------- */
-function renderIndicatorPanel(){
-  refs.indicators.innerHTML = `
-    <div><strong>Poverty rate</strong>: ${(indicators.povertyRate*100).toFixed(1)}%</div>
-    <div><strong>School attendance</strong>: ${(indicators.schoolAttendance*100).toFixed(0)}%</div>
-    <div><strong>Water access</strong>: ${(indicators.waterAccess*100).toFixed(0)}%</div>
-    <div><strong>Fisher dependency</strong>: ${(indicators.fisherDependency*100).toFixed(0)}%</div>
-    <div class="muted" style="margin-top:8px">Data placeholders for classroom use. Teachers can override values in settings or code.</div>
-  `;
+/* ---------- Scenario definitions (kept from earlier) ---------- */
+const scenarios = {
+  default: {
+    name: "Baseline",
+    budget: 500,
+    voterGroups: [
+      { id:'youth', name:'Youth (18-30)', size:0.22, sentiment:0.5, responsiveness:0.9 },
+      { id:'farmers', name:'Farmers', size:0.20, sentiment:0.45, responsiveness:0.8 },
+      { id:'fisher', name:'Fisherfolk', size:0.12, sentiment:0.5, responsiveness:0.7 },
+      { id:'women', name:'Women', size:0.18, sentiment:0.52, responsiveness:0.6 },
+      { id:'seniors', name:'Seniors', size:0.16, sentiment:0.55, responsiveness:0.5 },
+      { id:'business', name:'Small Business', size:0.12, sentiment:0.48, responsiveness:0.6 }
+    ]
+  },
+  flood: {
+    name: "Monsoon Floods",
+    budget: 400,
+    voterGroups: [
+      { id:'youth', name:'Youth (18-30)', size:0.22, sentiment:0.45, responsiveness:0.9 },
+      { id:'farmers', name:'Farmers', size:0.20, sentiment:0.35, responsiveness:0.9 },
+      { id:'fisher', name:'Fisherfolk', size:0.12, sentiment:0.30, responsiveness:0.9 },
+      { id:'women', name:'Women', size:0.18, sentiment:0.48, responsiveness:0.7 },
+      { id:'seniors', name:'Seniors', size:0.16, sentiment:0.50, responsiveness:0.5 },
+      { id:'business', name:'Small Business', size:0.12, sentiment:0.40, responsiveness:0.6 }
+    ]
+  },
+  farmers: {
+    name: "Farmer Protest",
+    budget: 450,
+    voterGroups: [
+      { id:'youth', name:'Youth (18-30)', size:0.22, sentiment:0.48, responsiveness:0.8 },
+      { id:'farmers', name:'Farmers', size:0.20, sentiment:0.30, responsiveness:1.0 },
+      { id:'fisher', name:'Fisherfolk', size:0.12, sentiment:0.42, responsiveness:0.7 },
+      { id:'women', name:'Women', size:0.18, sentiment:0.50, responsiveness:0.6 },
+      { id:'seniors', name:'Seniors', size:0.16, sentiment:0.52, responsiveness:0.5 },
+      { id:'business', name:'Small Business', size:0.12, sentiment:0.46, responsiveness:0.6 }
+    ]
+  }
+};
+
+/* ---------- Utility helpers ---------- */
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function formatRupee(n){ return '₹' + n.toLocaleString('en-IN'); }
+
+/* ---------- Initialization & render helpers ---------- */
+function loadScenario(key){
+  const s = scenarios[key];
+  state.budget = s.budget;
+  state.partyFunds = Math.max(200, Math.round(s.budget * 0.6));
+  state.reputation = 50;
+  state.corruptionScore = 0;
+  state.turn = 0;
+  state.voterGroups = s.voterGroups.map(g => ({ ...g }));
+  state.history = [];
+  appendLog(`Loaded scenario: ${s.name}`);
+  pushSnapshot();
+  renderAll();
 }
 
-function computeInitialVoterGroups(){
-  return archetypesBase.map(a=>{
-    let s = MAPPING.baseline;
-    if(a.id === 'youth' || a.id === 'business') s += MAPPING.povertyImpact * indicators.povertyRate;
-    if(a.id === 'youth' || a.id === 'women') s += MAPPING.attendanceImpact * (indicators.schoolAttendance - 0.75);
-    if(a.id === 'fisher' || a.id === 'women') s += MAPPING.waterImpact * (indicators.waterAccess - 0.8);
-    if(a.id === 'farmers'){
-      s += MAPPING.agImpact * (indicators.agParticipation - 0.2);
-      s += MAPPING.povertyImpact * (indicators.povertyRate * 0.5);
-    }
-    const sentiment = clamp(s, MAPPING.clampMin, MAPPING.clampMax);
-    const responsiveness = 0.5 + Math.random() * 0.6;
-    return { ...a, sentiment, responsiveness };
-  });
+function renderAll(){
+  renderMoves();
+  renderFundMoves();
+  renderDonors();
+  renderVoters();
+  updateKPIs();
+  resetChart();
+  updateChart();
+  renderHistoryList();
+  updateTimelineControls();
 }
 
+/* ---------- Render UI pieces ---------- */
 function renderMoves(){
   refs.moves.innerHTML = '';
   Object.keys(MOVES).forEach(k=>{
@@ -320,7 +410,9 @@ function renderMoves(){
     btn.onclick = () => applyMove(k);
     refs.moves.appendChild(btn);
   });
+}
 
+function renderFundMoves(){
   refs.fundMoves.innerHTML = '';
   Object.keys(FUND_MOVES).forEach(k=>{
     const fm = FUND_MOVES[k];
@@ -353,9 +445,89 @@ function renderVoters(){
       <div style="text-align:right"><div class="small">Sentiment</div><div style="font-weight:700" id="sent-${g.id}">${(g.sentiment*100).toFixed(0)}%</div></div>`;
     refs.voterList.appendChild(div);
   });
+  renderVoterTable();
+  renderHeatmap();
 }
 
-/* ---------- Core campaign functions ---------- */
+/* ---------- KPI & summary ---------- */
+function updateKPIs(){
+  refs.kBudget.textContent = formatRupee(state.budget);
+  refs.kParty.textContent = formatRupee(state.partyFunds);
+  refs.kRep.textContent = `${state.reputation}`;
+  refs.cardBudget.textContent = formatRupee(state.budget);
+  refs.cardParty.textContent = formatRupee(state.partyFunds);
+  refs.cardRep.textContent = `${state.reputation}`;
+  refs.turnBadge.textContent = `Turn ${state.turn}`;
+}
+
+/* ---------- Voter table & heatmap ---------- */
+function renderVoterTable(){
+  refs.voterTableBody.innerHTML = '';
+  state.voterGroups.forEach(g=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${g.name}</td><td>${(g.size*100).toFixed(0)}%</td><td>${(g.sentiment*100).toFixed(0)}%</td><td>${g.responsiveness.toFixed(2)}</td>`;
+    refs.voterTableBody.appendChild(tr);
+  });
+}
+
+function sentimentToColor(s){
+  // map 0..1 to red->yellow->green
+  if(s < 0.4) return '#fee2e2';
+  if(s < 0.6) return '#fef3c7';
+  return '#dcfce7';
+}
+
+function renderHeatmap(){
+  refs.heatmapRow.innerHTML = '';
+  state.voterGroups.forEach(g=>{
+    const cell = document.createElement('div');
+    cell.className = 'heat-cell';
+    cell.style.background = sentimentToColor(g.sentiment);
+    cell.title = `${g.name}: ${(g.sentiment*100).toFixed(0)}%`;
+    refs.heatmapRow.appendChild(cell);
+  });
+}
+
+/* ---------- Charting ---------- */
+function resetChart(){
+  voteChart.data.labels = [];
+  voteChart.data.datasets = state.voterGroups.map(g=>({
+    label: g.name,
+    data: [],
+    borderWidth:2,
+    fill:false,
+    tension:0.2
+  }));
+  voteChart.update();
+}
+
+function updateChart(){
+  const label = `T${state.turn}`;
+  voteChart.data.labels.push(label);
+  const breakdown = computeVoteBreakdown();
+  voteChart.data.datasets.forEach(ds=>{
+    const b = breakdown.find(x=>x.name===ds.label);
+    ds.data.push(b ? b.share : 0);
+  });
+  voteChart.update();
+  renderVoteBreakdown();
+}
+
+/* ---------- Vote conversion ---------- */
+function computeVoteBreakdown(){
+  const weighted = state.voterGroups.reduce((acc,g)=>acc + g.sentiment * g.size, 0);
+  return state.voterGroups.map(g=>{
+    const share = weighted>0 ? (g.sentiment * g.size / weighted) * 100 : (g.size*100/state.voterGroups.length);
+    return { id:g.id, name:g.name, share };
+  });
+}
+
+function renderVoteBreakdown(){
+  const breakdown = computeVoteBreakdown();
+  refs.voteBreakdown.innerHTML = breakdown.map(b=>`<div style="margin-bottom:6px"><strong>${b.name}</strong>: ${b.share.toFixed(1)}%</div>`).join('');
+}
+
+/* ---------- Core simulation functions (kept) ---------- */
 function applyMove(moveKey){
   const move = MOVES[moveKey];
   const spend = Number(refs.spendAmount.value);
@@ -364,104 +536,90 @@ function applyMove(moveKey){
   state.budget -= totalCost;
   state.reputation = clamp(state.reputation + Math.round(totalCost / 50), 0, 100);
   Object.keys(move.effects).forEach(gid=>{
-    const group = state.voterGroups.find(x => x.id === gid);
+    const group = state.voterGroups.find(x=>x.id===gid);
     if(!group) return;
     const base = move.effects[gid];
-    const delta = base * (spend / 100) * group.responsiveness;
+    const delta = base * (spend/100) * group.responsiveness;
     group.sentiment = clamp(group.sentiment + delta, 0, 1);
-    const elSent = document.getElementById(`sent-${group.id}`);
-    if(elSent) elSent.textContent = `${(group.sentiment*100).toFixed(0)}%`;
+    const el = document.getElementById(`sent-${group.id}`);
+    if(el) el.textContent = `${(group.sentiment*100).toFixed(0)}%`;
   });
   appendLog(`Applied ${move.name} spending ₹${totalCost}.`);
-  updateKPIs(); pushHistory(); updateChart();
+  pushSnapshot();
+  updateKPIs(); updateChart(); renderVoters();
 }
 
-/* ---------- Fundraising mechanics: obtaining Party Funds ---------- */
+/* ---------- Fundraising & donors (kept) ---------- */
 function runFundMove(key){
   const fm = FUND_MOVES[key];
   if(fm.cost > state.budget){ appendLog(`Not enough campaign budget to run ${fm.name}. Need ₹${fm.cost}.`); return; }
   state.budget -= fm.cost;
-
   let raised = 0;
-
-  Object.keys(fm.reach).forEach(reachKey => {
+  Object.keys(fm.reach).forEach(reachKey=>{
     const reach = fm.reach[reachKey];
-
-    // local donors
-    const donor = DONORS.find(d => d.id === reachKey);
+    const donor = DONORS.find(d=>d.id===reachKey);
     if(donor){
-      const prob = donor.baseProb * donor.responsiveness * (state.reputation / 100) * reach;
+      const prob = donor.baseProb * donor.responsiveness * (state.reputation/100) * reach;
       if(Math.random() < prob){
-        const gift = Math.round(donor.maxGift * (0.4 + Math.random() * 0.6));
+        const gift = Math.round(donor.maxGift * (0.4 + Math.random()*0.6));
         raised += gift;
       }
     }
-
-    // small donors many small gifts
     if(reachKey === 'smallDonor'){
-      const donorSmall = DONORS.find(d => d.id === 'smallDonor');
-      const count = Math.round(10 * (state.reputation / 100) * reach);
+      const donorSmall = DONORS.find(d=>d.id==='smallDonor');
+      const count = Math.round(10 * (state.reputation/100) * reach);
       for(let i=0;i<count;i++){
         if(Math.random() < donorSmall.baseProb * donorSmall.responsiveness){
-          raised += Math.round(2 + Math.random() * 18);
+          raised += Math.round(2 + Math.random()*18);
         }
       }
     }
-
-    // grants
     if(reachKey === 'grant'){
-      const grantProb = clamp(0.5 + (state.reputation - 50) / 200, 0.1, 0.95);
-      if(Math.random() < grantProb){
-        raised += fm.baseRaise;
-      }
+      const grantProb = clamp(0.5 + (state.reputation - 50)/200, 0.1, 0.95);
+      if(Math.random() < grantProb) raised += fm.baseRaise;
     }
   });
-
-  // platform fee for crowdfunding
   if(key === 'crowdfunding') raised = Math.round(raised * 0.92);
-
-  // add to party funds
   state.partyFunds += raised;
   appendLog(`${fm.name} raised ₹${raised} added to Party Funds.`);
-  updateKPIs(); pushHistory();
+  pushSnapshot();
+  updateKPIs(); renderDonors();
 }
 
-/* Direct solicitation of a donor (button on donor card) */
+/* Direct solicitation */
 function simulateDirectDonation(donorId){
-  const donor = DONORS.find(d => d.id === donorId);
+  const donor = DONORS.find(d=>d.id===donorId);
   if(!donor) return;
-  const prob = donor.baseProb * donor.responsiveness * (state.reputation / 100);
+  const prob = donor.baseProb * donor.responsiveness * (state.reputation/100);
   if(Math.random() < prob){
-    const gift = Math.round(donor.maxGift * (0.4 + Math.random() * 0.6));
+    const gift = Math.round(donor.maxGift * (0.4 + Math.random()*0.6));
     state.partyFunds += gift;
     appendLog(`Solicited ${donor.name}: donated ₹${gift} to Party Funds.`);
   } else {
     appendLog(`Solicitation to ${donor.name} did not yield a donation.`);
   }
-  updateKPIs(); pushHistory();
+  pushSnapshot();
+  updateKPIs();
 }
 
-/* ---------- Party match and transfers ---------- */
+/* ---------- Party match & transfer (kept) ---------- */
 refs.requestPartyFunds.onclick = () => {
-  const matchRate = 0.5 * (state.reputation / 100);
+  const matchRate = 0.5 * (state.reputation/100);
   const requested = Math.round(state.budget * 0.2);
   const available = state.partyFunds;
   const match = Math.min(Math.round(requested * matchRate), available);
-  if(match <= 0){
-    appendLog('Party declined to match funds. Improve reputation to get party support.');
-    return;
-  }
+  if(match <= 0){ appendLog('Party declined to match funds. Improve reputation to get party support.'); return; }
   state.partyFunds -= match;
   state.budget += match;
   appendLog(`Party matched ₹${match} to campaign budget.`);
-  updateKPIs(); pushHistory(); updateChart();
+  pushSnapshot();
+  updateKPIs(); updateChart();
 };
 
 refs.transferFromParty.onclick = () => {
   const transparency = refs.transferTransparency.value;
   const amount = Math.min(Math.round(state.partyFunds * 0.5), 400);
   if(amount <= 0){ appendLog('No party funds available to transfer.'); return; }
-
   if(transparency === 'transparent'){
     state.partyFunds -= amount;
     state.budget += amount;
@@ -473,115 +631,170 @@ refs.transferFromParty.onclick = () => {
     state.reputation = clamp(state.reputation - 6, 0, 100);
     appendLog(`Opaque transfer: ₹${amount} moved quickly. Corruption score increased.`);
   }
-  updateKPIs(); pushHistory(); checkForAudit(); updateChart();
+  pushSnapshot();
+  updateKPIs(); checkForAudit(); updateChart();
 };
 
-/* ---------- Audit mechanics ---------- */
+/* ---------- Audit (kept) ---------- */
 function checkForAudit(){
   const base = Number(refs.auditSensitivity.value) / 1000;
-  const prob = base + state.corruptionScore * 0.18 - (state.reputation / 100) * 0.01;
+  const prob = base + state.corruptionScore * 0.18 - (state.reputation/100) * 0.01;
   if(Math.random() < prob){
     const frozen = Math.round(state.partyFunds * 0.5);
     state.partyFunds -= frozen;
     state.reputation = clamp(state.reputation - 12, 0, 100);
     appendLog(`Audit triggered: ₹${frozen} frozen from Party Funds. Reputation reduced.`);
+    pushSnapshot();
+    updateKPIs();
   }
 }
 
-/* ---------- Turn progression ---------- */
+/* ---------- Turn progression & timeline ---------- */
 function endTurn(){
   state.turn += 1;
-  refs.turnBadge.textContent = `Turn ${state.turn}`;
   state.voterGroups.forEach(g=>{
     const drift = (Math.random() * 0.02) * (Math.random() > 0.85 ? -1 : 1);
     g.sentiment = clamp(g.sentiment - Math.abs(drift), 0, 1);
-    const elSent = document.getElementById(`sent-${g.id}`);
-    if(elSent) elSent.textContent = `${(g.sentiment*100).toFixed(0)}%`;
+    const el = document.getElementById(`sent-${g.id}`);
+    if(el) el.textContent = `${(g.sentiment*100).toFixed(0)}%`;
   });
-  const passive = Math.round( (state.reputation / 100) * 8 );
+  const passive = Math.round((state.reputation/100) * 8);
   state.partyFunds += passive;
   appendLog(`Turn ${state.turn} ended. Passive donations ₹${passive} added to Party Funds.`);
-  updateKPIs(); renderVoters(); pushHistory(); updateChart();
+  pushSnapshot();
+  updateKPIs(); renderVoters(); updateChart();
 }
 
-/* ---------- Vote conversion and charting ---------- */
-function computeVoteBreakdown(){
-  const weighted = state.voterGroups.reduce((acc, g) => acc + g.sentiment * g.size, 0);
-  return state.voterGroups.map(g => {
-    const share = weighted > 0 ? (g.sentiment * g.size / weighted) * 100 : (g.size * 100 / state.voterGroups.length);
-    return { id: g.id, name: g.name, share };
+/* ---------- History snapshots for timeline ---------- */
+function pushSnapshot(){
+  const snapshot = {
+    turn: state.turn,
+    budget: state.budget,
+    partyFunds: state.partyFunds,
+    reputation: state.reputation,
+    groups: state.voterGroups.map(g=>({ id:g.id, sentiment:g.sentiment, size:g.size })),
+    timestamp: new Date().toISOString()
+  };
+  state.history.push(snapshot);
+  // keep history length reasonable
+  if(state.history.length > 200) state.history.shift();
+  renderHistoryList();
+  updateTimelineControls();
+}
+
+function renderHistoryList(){
+  refs.historyList.innerHTML = '';
+  const recent = state.history.slice().reverse();
+  recent.forEach(s=>{
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `<div style="font-weight:700">Turn ${s.turn}</div><div class="muted">Budget ${formatRupee(s.budget)} • Party ${formatRupee(s.partyFunds)} • Rep ${s.reputation}</div>`;
+    refs.historyList.appendChild(div);
   });
 }
 
-function resetChart(){
-  voteChart.data.labels = [];
-  voteChart.data.datasets = state.voterGroups.map(g => ({ label: g.name, data: [], borderWidth: 2, fill: false, tension: 0.2 }));
-  voteChart.update();
+/* ---------- Timeline controls & playback ---------- */
+function updateTimelineControls(){
+  refs.timeline.max = Math.max(0, state.history.length - 1);
+  refs.timeline.value = state.history.length - 1;
 }
 
-function updateChart(){
-  const label = `T${state.turn}`;
-  voteChart.data.labels.push(label);
-  const breakdown = computeVoteBreakdown();
-  voteChart.data.datasets.forEach(ds => {
-    const b = breakdown.find(x => x.name === ds.label);
-    ds.data.push(b ? b.share : 0);
+let playInterval = null;
+refs.playBtn.onclick = () => {
+  if(state.playing){
+    stopPlayback();
+  } else {
+    startPlayback();
+  }
+};
+
+function startPlayback(){
+  state.playing = true;
+  refs.playBtn.textContent = '⏸';
+  playInterval = setInterval(()=>{
+    const idx = Number(refs.timeline.value);
+    if(idx < refs.timeline.max) {
+      refs.timeline.value = idx + 1;
+      showSnapshotAt(idx + 1);
+    } else {
+      stopPlayback();
+    }
+  }, 900);
+}
+
+function stopPlayback(){
+  state.playing = false;
+  refs.playBtn.textContent = '▶';
+  if(playInterval) clearInterval(playInterval);
+}
+
+refs.timeline.oninput = () => {
+  const idx = Number(refs.timeline.value);
+  showSnapshotAt(idx);
+};
+
+refs.stepBack.onclick = () => {
+  const idx = Math.max(0, Number(refs.timeline.value) - 1);
+  refs.timeline.value = idx;
+  showSnapshotAt(idx);
+};
+
+refs.stepForward.onclick = () => {
+  const idx = Math.min(Number(refs.timeline.max), Number(refs.timeline.value) + 1);
+  refs.timeline.value = idx;
+  showSnapshotAt(idx);
+};
+
+function showSnapshotAt(index){
+  const idx = clamp(index, 0, state.history.length - 1);
+  const snap = state.history[idx];
+  if(!snap) return;
+  // apply snapshot to UI (not altering live state)
+  refs.cardBudget.textContent = formatRupee(snap.budget);
+  refs.cardParty.textContent = formatRupee(snap.partyFunds);
+  refs.cardRep.textContent = `${snap.reputation}`;
+  // update chart highlight by drawing a vertical line (simple approach: add label)
+  // update voter table to show snapshot sentiments
+  refs.voterTableBody.innerHTML = '';
+  snap.groups.forEach(g=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${g.id}</td><td>${(g.size*100).toFixed(0)}%</td><td>${(g.sentiment*100).toFixed(0)}%</td><td>-</td>`;
+    refs.voterTableBody.appendChild(tr);
   });
-  voteChart.update();
-  renderVoteBreakdown();
+  refs.turnBadge.textContent = `Turn ${snap.turn}`;
 }
 
-function renderVoteBreakdown(){
-  const breakdown = computeVoteBreakdown();
-  refs.voteBreakdown.innerHTML = breakdown.map(b => `<div style="margin-bottom:6px"><strong>${b.name}</strong>: ${b.share.toFixed(1)}%</div>`).join('');
-}
-
-/* ---------- History, logging, utilities ---------- */
-function pushHistory(){
-  state.history.push({ turn: state.turn, budget: state.budget, partyFunds: state.partyFunds, rep: state.reputation, groups: state.voterGroups.map(g => ({ id: g.id, sentiment: g.sentiment })) });
-}
-
+/* ---------- Logging ---------- */
 function appendLog(text){
   const time = new Date().toLocaleTimeString();
   refs.log.innerHTML = `<div>[${time}] ${text}</div>` + refs.log.innerHTML;
 }
 
-function updateKPIs(){
-  refs.kBudget.textContent = `₹${state.budget}`;
-  refs.kParty.textContent = `₹${state.partyFunds}`;
-  refs.kRep.textContent = `${state.reputation}`;
-}
+/* ---------- Scenario selector ---------- */
+refs.scenarioSelectEl.onchange = () => {
+  const key = refs.scenarioSelectEl.value;
+  loadScenario(key);
+};
 
-function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+/* ---------- Filters (visual only) ---------- */
+refs.filterChips.forEach(chip=>{
+  chip.onclick = () => {
+    refs.filterChips.forEach(c=>c.style.background = '#f1f5f9');
+    chip.style.background = '#e6f0ff';
+    appendLog(`Filter applied: ${chip.dataset.filter}`);
+  };
+});
 
-/* ---------- Reset and init ---------- */
-refs.resetBtn.onclick = () => initSimulation(false);
-refs.endTurn.onclick = endTurn;
+/* ---------- Utility: format rupee ---------- */
+function formatRupee(n){ return '₹' + n.toLocaleString('en-IN'); }
 
-function initSimulation(keepBudget){
-  renderIndicatorPanel();
-  state.voterGroups = computeInitialVoterGroups();
-  if(!keepBudget) state.budget = indicators.povertyRate > 0.15 ? 450 : 520;
-  state.partyFunds = 400;
-  state.reputation = 50;
-  state.corruptionScore = 0;
-  state.turn = 0;
-  state.history = [];
-  renderMoves();
-  renderDonors();
-  renderVoters();
-  updateKPIs();
-  resetChart();
-  pushHistory();
-  updateChart();
-  appendLog('Simulation initialized with expanded local Party Funds sources.');
-}
+/* ---------- Initialization ---------- */
+loadScenario('default');
 
-/* ---------- initial render ---------- */
-initSimulation(false);
-
-/* expose simulateDirectDonation to global scope for inline onclick */
+/* expose some functions for inline buttons */
 window.simulateDirectDonation = simulateDirectDonation;
+window.applyMove = applyMove;
+window.runFundMove = runFundMove;
 </script>
 </body>
 </html>
