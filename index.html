@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8fafc">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f172a">
+    <title>TN Mood Map - Live Real Map Edition</title>
+    
+    <link rel="manifest" id="pwa-manifest">
+    <script>
+        const manifest = {
+            name: "TN Mood Map",
+            short_name: "MoodMap",
+            start_url: ".",
+            display: "standalone",
+            background_color: "#0f172a",
+            theme_color: "#3b82f6",
+            icons: [{
+                src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%233b82f6'/%3E%3Ctext x='50' y='50' font-family='Arial' font-size='40' fill='white' text-anchor='middle' dy='.3em'%3E%F0%9F%93%8D%3C/text%3E%3C/svg%3E",
+                sizes: "192x192",
+                type: "image/svg+xml"
+            }]
+        };
+        const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+        document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                self.addEventListener('install', (e) => self.skipWaiting());
+                self.addEventListener('activate', (e) => self.clients.claim());
+                self.addEventListener('fetch', (e) => {});
+            `;
+            const swBlob = new Blob([swCode], {type: 'application/javascript'});
+            navigator.serviceWorker.register(URL.createObjectURL(swBlob));
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        .leaflet-control-zoom { display: none !important; }
+        
+        .mood-glow-orb {
+            border-radius: 50%;
+            filter: blur(15px);
+            opacity: 0.7;
+            transition: all 0.8s ease-in-out;
+            animation: pulse 3s infinite alternate;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.3); opacity: 0.8; }
+        }
+        
+        .traffic-line-anim {
+            stroke-dasharray: 10;
+            animation: dash 20s linear infinite;
+        }
+        @keyframes dash { to { stroke-dashoffset: -1000; } }
+
+        .custom-mood-marker { background: transparent; border: none; }
+
+        /* Weather Micro-Climates */
+        .weather-container { position: absolute; inset: -40px; pointer-events: none; z-index: 0; overflow: visible; }
+        .heat-wave { position: absolute; bottom: 20%; width: 4px; height: 25px; background: linear-gradient(to top, transparent, rgba(239, 68, 68, 0.8), transparent); border-radius: 50%; filter: blur(2px); animation: heatRise 2s infinite ease-in; }
+        @keyframes heatRise { 0% { transform: translateY(0) scaleX(1) skewX(0deg); opacity: 0; } 30% { opacity: 1; transform: translateY(-15px) scaleX(1.5) skewX(15deg); } 70% { opacity: 0.8; transform: translateY(-35px) scaleX(1.2) skewX(-15deg); } 100% { transform: translateY(-50px) scaleX(1) skewX(0deg); opacity: 0; } }
+        .wind-gust { position: absolute; height: 2px; background: linear-gradient(to right, transparent, rgba(251, 191, 36, 0.9), transparent); border-radius: 2px; animation: windBlow 1.8s infinite linear; box-shadow: 0 0 5px rgba(251, 191, 36, 0.5); }
+        @keyframes windBlow { 0% { transform: translateX(-40px) scaleX(0.5); opacity: 0; width: 10px; } 20% { opacity: 1; transform: translateX(-10px) scaleX(1); width: 40px; } 80% { opacity: 1; transform: translateX(30px) scaleX(1.2); width: 50px; } 100% { transform: translateX(60px) scaleX(0.5); opacity: 0; width: 20px; } }
+        .wind-curve { position: absolute; width: 50px; height: 20px; border-top: 2px solid rgba(251, 191, 36, 0.4); border-radius: 50%; animation: windCurveBlow 2.5s infinite ease-in-out; }
+        @keyframes windCurveBlow { 0% { transform: translateX(-30px) translateY(10px); opacity: 0; } 50% { opacity: 1; transform: translateX(10px) translateY(-5px); } 100% { transform: translateX(50px) translateY(-20px); opacity: 0; } }
+        .smooth-pulse { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 2px solid rgba(16, 185, 129, 0.6); border-radius: 50%; animation: coolPulse 4s infinite ease-out; box-shadow: inset 0 0 15px rgba(16, 185, 129, 0.2); }
+        @keyframes coolPulse { 0% { width: 40px; height: 40px; opacity: 1; border-width: 3px; } 100% { width: 140px; height: 140px; opacity: 0; border-width: 0px; } }
+        .cool-sparkle { position: absolute; width: 4px; height: 4px; background: rgba(16, 185, 129, 0.9); border-radius: 50%; box-shadow: 0 0 8px rgba(16, 185, 129, 1); animation: floatUp 3s infinite ease-in-out; }
+        @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 50% { opacity: 1; transform: translateY(-20px) scale(1.2); } 100% { transform: translateY(-40px) scale(0.5); opacity: 0; } }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100 overflow-hidden h-screen w-screen font-sans flex flex-col relative transition-colors duration-300">
+
+    <div id="real-map" class="absolute inset-0 w-full h-full z-0 cursor-crosshair"></div>
+
+    <div class="absolute top-4 left-4 right-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-4 rounded-2xl z-20 shadow-xl flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center max-w-3xl mx-auto transition-colors duration-300">
+        <div>
+            <h1 class="text-sm font-bold tracking-wide text-slate-800 dark:text-slate-300 uppercase flex items-center gap-2">
+                TN Mood Map <span class="text-xs bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 px-2 py-0.5 rounded-md normal-case font-normal">Live Map</span>
+            </h1>
+            <p class="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mt-0.5 font-mono">
+                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span> GPS Telemetry Active
+            </p>
+        </div>
+        
+        <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+            <button id="toggle-traffic-btn" class="text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-1.5 transition-colors shadow-sm">
+                🛣️ <span id="traffic-btn-text">Show Live Traffic</span>
+            </button>
+            <span id="active-count" class="text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 font-mono shadow-inner transition-colors">
+                0 Nodes Active
+            </span>
+        </div>
+    </div>
+
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 z-20 w-[90%] max-w-xs pointer-events-none">
+        <p class="text-[10px] text-slate-700 dark:text-slate-300 bg-white/90 dark:bg-slate-900/90 px-3 py-1 rounded-full backdrop-blur-sm border border-slate-300 dark:border-slate-800 shadow-sm whitespace-nowrap">
+            👆 Tap anywhere on the map to drop a pin
+        </p>
+        <button id="open-drawer-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-xl font-bold shadow-[0_0_25px_rgba(37,99,235,0.4)] flex items-center justify-center gap-2 transition-all pointer-events-auto">
+            📍 Or Type Location
+        </button>
+    </div>
+
+    <div id="checkin-drawer" class="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl p-6 z-30 transition-all duration-500 transform translate-y-full shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-2xl max-w-md mx-auto">
+        <div class="w-12 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-5"></div>
+        
+        <h2 id="drawer-title" class="text-xl font-bold text-center mb-1 text-slate-900 dark:text-white">Statewide Vibe Input</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 text-center mb-5">Add your location to the real Tamil Nadu grid.</p>
+        
+        <div class="mb-5">
+            <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">Location Name</label>
+            <input type="text" id="user-location-input" placeholder="e.g., Trichy, Custom Area..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3.5 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors">
+        </div>
+
+        <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">Select Vibe Level</label>
+        <div class="flex flex-col gap-2.5 mb-6">
+            <button class="mood-submit-btn flex items-center gap-3 w-full bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-900/50 p-3 rounded-xl text-left transition-colors relative overflow-hidden group" data-color="bg-red-500" data-text="Semma Tension">
+                <span class="text-xl relative z-10">🔴</span>
+                <div class="relative z-10">
+                    <p class="text-sm font-semibold text-red-800 dark:text-red-200">Semma Tension (High Stress)</p>
+                    <p class="text-[10px] text-red-600 dark:text-red-400/70">Generates heat wave anomalies</p>
+                </div>
+            </button>
+
+            <button class="mood-submit-btn flex items-center gap-3 w-full bg-amber-50 dark:bg-amber-950/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-900/50 p-3 rounded-xl text-left transition-colors relative overflow-hidden group" data-color="bg-amber-400" data-text="Chill / Polaama">
+                <span class="text-xl relative z-10">🟡</span>
+                <div class="relative z-10">
+                    <p class="text-sm font-semibold text-amber-800 dark:text-amber-200">Chill / Polaama (Moderate)</p>
+                    <p class="text-[10px] text-amber-600 dark:text-amber-400/70">Summons monsoonal wind patterns</p>
+                </div>
+            </button>
+
+            <button class="mood-submit-btn flex items-center gap-3 w-full bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-900/50 p-3 rounded-xl text-left transition-colors relative overflow-hidden group" data-color="bg-emerald-500" data-text="Smooth Vibe">
+                <span class="text-xl relative z-10">🟢</span>
+                <div class="relative z-10">
+                    <p class="text-sm font-semibold text-emerald-800 dark:text-emerald-200">Smooth Vibe (Focused)</p>
+                    <p class="text-[10px] text-emerald-600 dark:text-emerald-400/70">Projects a cool, stable aura</p>
+                </div>
+            </button>
+        </div>
+
+        <button id="close-drawer-btn" class="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 py-3 rounded-xl text-xs font-medium tracking-wide transition-colors">Cancel</button>
+    </div>
+
+    <script>
+        // 1. Initialize the Real Map Engine
+        const map = L.map('real-map').setView([10.7905, 78.7047], 7);
+        let currentTileLayer = null;
+
+        // 2. System Theme Dynamic Switching for Map Tiles
+        function updateMapTheme(e) {
+            if (currentTileLayer) map.removeLayer(currentTileLayer);
+            const isDark = e.matches;
+            const tileUrl = isDark 
+                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
+                : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+            currentTileLayer = L.tileLayer(tileUrl, { attribution: '&copy; CARTO' }).addTo(map);
+        }
+        const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        darkModeQuery.addEventListener('change', updateMapTheme);
+        updateMapTheme(darkModeQuery); 
+
+        // 3. Real World Latitude / Longitude Dictionary
+        const tnGeography = {
+            "chennai": [13.0827, 80.2707], "vellore": [12.9165, 79.1325], "salem": [11.6643, 78.1460],
+            "coimbatore": [11.0168, 76.9558], "erode": [11.3410, 77.7172], "trichy": [10.7905, 78.7047],
+            "thanjavur": [10.7870, 79.1378], "madurai": [9.9252, 78.1198], "thoothukudi": [8.7642, 78.1348],
+            "tirunelveli": [8.7139, 77.7567], "kanyakumari": [8.0883, 77.5385]
+        };
+
+        let activePinCount = 0;
+        let activeMarkerBeingEdited = null; 
+        let pendingClickCoords = null; 
+        let activeNodesList = []; // Array tracking all currently dropped marker coordinates
+
+        const drawer = document.getElementById("checkin-drawer");
+        const locationInput = document.getElementById("user-location-input");
+        const drawerTitle = document.getElementById("drawer-title");
+
+        // 4. Map Click Event -> Pick Location
+        map.on('click', function(e) {
+            pendingClickCoords = [e.latlng.lat, e.latlng.lng];
+            activeMarkerBeingEdited = null; 
+            drawerTitle.innerText = "Location Picked";
+            locationInput.value = "";
+            locationInput.placeholder = "Name this spot (e.g., College Campus)";
+            drawer.classList.remove("translate-y-full");
+            locationInput.focus();
+        });
+
+        // Dynamic Traffic Lines Setup
+        const trafficLines = L.featureGroup();
+
+        // Recalculate traffic vectors dynamically based on active nodes
+        function updateTrafficTelemetry() {
+            trafficLines.clearLayers();
+            if (activeNodesList.length > 1) {
+                for (let i = 0; i < activeNodesList.length - 1; i++) {
+                    const startCoords = activeNodesList[i].coords;
+                    const endCoords = activeNodesList[i + 1].coords;
+                    const moodColor = activeNodesList[i + 1].color;
+
+                    let lineColor = '#10b981'; // Default smooth
+                    if (moodColor.includes('red')) lineColor = '#ef4444';
+                    if (moodColor.includes('amber')) lineColor = '#f59e0b';
+
+                    const polyline = L.polyline([startCoords, endCoords], {
+                        color: lineColor,
+                        weight: 4,
+                        className: 'traffic-line-anim'
+                    });
+                    trafficLines.addLayer(polyline);
+                }
+            }
+        }
+
+        let trafficActive = false;
+        document.getElementById("toggle-traffic-btn").addEventListener("click", (e) => {
+            trafficActive = !trafficActive;
+            const btn = e.currentTarget;
+            const btnText = document.getElementById("traffic-btn-text");
+            
+            if (trafficActive) {
+                map.addLayer(trafficLines);
+                btn.classList.add("bg-blue-100", "dark:bg-blue-950", "border-blue-300", "dark:border-blue-500/50", "text-blue-700", "dark:text-blue-300");
+                btnText.innerText = "Hide State Traffic";
+            } else {
+                map.removeLayer(trafficLines);
+                btn.classList.remove("bg-blue-100", "dark:bg-blue-950", "border-blue-300", "dark:border-blue-500/50", "text-blue-700", "dark:text-blue-300");
+                btnText.innerText = "Show Live Traffic";
+            }
+        });
+
+        // Seed Initial Data
+        window.addEventListener("DOMContentLoaded", () => {
+            dropPin("Chennai", "bg-red-500", "Semma Tension", tnGeography["chennai"]);
+            dropPin("Coimbatore", "bg-amber-400", "Chill / Polaama", tnGeography["coimbatore"]);
+            dropPin("Madurai", "bg-emerald-500", "Smooth Vibe", tnGeography["madurai"]);
+        });
+
+        // Drawer Controls
+        document.getElementById("open-drawer-btn").addEventListener("click", () => {
+            activeMarkerBeingEdited = null; 
+            pendingClickCoords = null; 
+            drawerTitle.innerText = "Statewide Vibe Input";
+            locationInput.value = "";
+            locationInput.placeholder = "e.g., Trichy, Salem, Custom Area...";
+            drawer.classList.remove("translate-y-full");
+            locationInput.focus();
+        });
+
+        document.getElementById("close-drawer-btn").addEventListener("click", () => {
+            activeMarkerBeingEdited = null;
+            pendingClickCoords = null;
+            drawer.classList.add("translate-y-full");
+            locationInput.value = "";
+        });
+
+        // Submit Pin
+        document.querySelectorAll(".mood-submit-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                let targetCity = locationInput.value.trim();
+                
+                if (!targetCity) {
+                    if (pendingClickCoords) targetCity = "Custom Spot";
+                    else { alert("Please enter a location name!"); return; }
+                }
+
+                const chosenColor = btn.getAttribute("data-color");
+                const chosenStatusText = btn.getAttribute("data-text");
+
+                if (activeMarkerBeingEdited !== null) {
+                    map.removeLayer(activeMarkerBeingEdited);
+                    activeNodesList = activeNodesList.filter(node => node.marker !== activeMarkerBeingEdited);
+                    activePinCount--; 
+                    activeMarkerBeingEdited = null; 
+                }
+
+                dropPin(targetCity, chosenColor, chosenStatusText, pendingClickCoords);
+                
+                drawer.classList.add("translate-y-full");
+                locationInput.value = "";
+                pendingClickCoords = null;
+            });
+        });
+
+        // Core Pin Engine
+        function dropPin(cityName, colorClass, statusText, exactCoords = null) {
+            const normalizedKey = cityName.toLowerCase().replace(/[^a-z]/g, "");
+            let coords = [];
+
+            if (exactCoords) {
+                coords = exactCoords; 
+            } else if (tnGeography[normalizedKey]) {
+                const jitterLat = (Math.random() - 0.5) * 0.05;
+                const jitterLng = (Math.random() - 0.5) * 0.05;
+                coords = [tnGeography[normalizedKey][0] + jitterLat, tnGeography[normalizedKey][1] + jitterLng];
+            } else {
+                const randomLat = 8.5 + Math.random() * 4.5;
+                const randomLng = 76.5 + Math.random() * 3.5;
+                coords = [randomLat, randomLng];
+            }
+
+            let textColor = "text-slate-600 dark:text-slate-400";
+            let weatherAnimations = "";
+
+            if(colorClass.includes("red")) {
+                textColor = "text-red-600 dark:text-red-400";
+                weatherAnimations = `<div class="weather-container"><div class="heat-wave" style="left: 30%; animation-delay: 0s;"></div><div class="heat-wave" style="left: 50%; animation-delay: 0.6s;"></div><div class="heat-wave" style="left: 70%; animation-delay: 1.2s; height: 35px;"></div></div>`;
+            } else if(colorClass.includes("amber")) {
+                textColor = "text-amber-600 dark:text-amber-400";
+                weatherAnimations = `<div class="weather-container"><div class="wind-gust" style="top: 25%; animation-delay: 0s;"></div><div class="wind-gust" style="top: 50%; animation-delay: 0.8s;"></div><div class="wind-curve" style="top: 30%; left: 10%; animation-delay: 0.2s;"></div></div>`;
+            } else if(colorClass.includes("emerald")) {
+                textColor = "text-emerald-600 dark:text-emerald-400";
+                weatherAnimations = `<div class="weather-container"><div class="smooth-pulse" style="animation-delay: 0s;"></div><div class="cool-sparkle" style="left: 20%; top: 40%; animation-delay: 0s;"></div><div class="cool-sparkle" style="left: 70%; top: 60%; animation-delay: 1.5s;"></div></div>`;
+            }
+
+            const markerHTML = `
+                <div class="relative flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform duration-300" style="width: 120px; height: 120px;">
+                    ${weatherAnimations}
+                    <div class="mood-glow-orb absolute inset-0 m-auto w-12 h-12 ${colorClass}"></div>
+                    <div class="relative bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl shadow-[0_5px_15px_rgba(0,0,0,0.1)] dark:shadow-2xl backdrop-blur-md z-10 whitespace-nowrap group hover:border-slate-400 dark:hover:border-slate-500 transition-colors">
+                        <p class="text-[11px] font-bold text-slate-800 dark:text-slate-100 capitalize text-center tracking-wide">${cityName}</p>
+                        <p class="text-[9px] ${textColor} font-mono mt-0.5 text-center font-semibold">${statusText}</p>
+                    </div>
+                </div>
+            `;
+
+            const customIcon = L.divIcon({ className: 'custom-mood-marker', html: markerHTML, iconSize: [0, 0] });
+            const newMarker = L.marker(coords, { icon: customIcon }).addTo(map);
+
+            newMarker.on('click', (e) => {
+                L.DomEvent.stopPropagation(e); // Stop Leaflet map click triggering when clicking marker
+                activeMarkerBeingEdited = newMarker;
+                pendingClickCoords = coords; 
+                drawerTitle.innerText = `Edit Vibe: ${cityName}`;
+                locationInput.value = cityName;
+                drawer.classList.remove("translate-y-full");
+            });
+
+            // Append new item configuration to our live array tracker
+            activeNodesList.push({
+                marker: newMarker,
+                coords: coords,
+                color: colorClass
+            });
+
+            // Trigger telemetry path update
+            updateTrafficTelemetry();
+
+            map.flyTo(coords, 8, { duration: 1.5 });
+
+            activePinCount++;
+            document.getElementById("active-count").innerText = `${activePinCount} Nodes Active`;
+        }
+    </script>
+</body>
+</html>
