@@ -1,368 +1,601 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8fafc">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f172a">
-    <title>TN Mood Map - Live Real Map Edition</title>
-    
-    <link rel="manifest" id="pwa-manifest">
-    <script>
-        const manifest = {
-            name: "TN Mood Map",
-            short_name: "MoodMap",
-            start_url: ".",
-            display: "standalone",
-            background_color: "#0f172a",
-            theme_color: "#3b82f6",
-            icons: [{
-                src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%233b82f6'/%3E%3Ctext x='50' y='50' font-family='Arial' font-size='40' fill='white' text-anchor='middle' dy='.3em'%3E%F0%9F%93%8D%3C/text%3E%3C/svg%3E",
-                sizes: "192x192",
-                type: "image/svg+xml"
-            }]
-        };
-        const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-        document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Future MLA — Simulation Prototype (Party Funds: Local Sources)</title>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  /* ---------- Professional UI: variables ---------- */
+  :root{
+    --bg:#f4f6fb;
+    --card:#ffffff;
+    --muted:#6b7280;
+    --accent:#0b6efd;
+    --accent-2:#0f766e;
+    --danger:#dc2626;
+    --glass: rgba(255,255,255,0.85);
+    --shadow: 0 8px 24px rgba(12,15,30,0.08);
+    --radius:12px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", monospace;
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Noto Sans",sans-serif;background:linear-gradient(180deg,#eef2ff 0%, #f7fafc 100%);color:#0f172a}
+  .app{max-width:1200px;margin:28px auto;padding:18px;display:grid;grid-template-columns:1fr;gap:18px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;box-shadow:var(--shadow)}
+  h1{font-size:18px;margin:0}
+  .subtitle{font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:360px 1fr;gap:18px;margin-top:8px}
+  @media (max-width:980px){ .grid{grid-template-columns:1fr} }
 
-        if ('serviceWorker' in navigator) {
-            const swCode = `
-                self.addEventListener('install', (e) => self.skipWaiting());
-                self.addEventListener('activate', (e) => self.clients.claim());
-                self.addEventListener('fetch', (e) => {});
-            `;
-            const swBlob = new Blob([swCode], {type: 'application/javascript'});
-            navigator.serviceWorker.register(URL.createObjectURL(swBlob));
-        }
-    </script>
+  /* left column */
+  .panel{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+  .section-title{font-size:14px;margin:0 0 10px 0}
+  .muted{color:var(--muted);font-size:13px}
+  .kpis{display:flex;gap:10px;margin-bottom:12px}
+  .kpi{flex:1;padding:10px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfdff);text-align:center;border:1px solid #eef2ff}
+  .kpi .label{font-size:12px;color:var(--muted)}
+  .kpi .value{font-weight:700;font-size:18px;margin-top:6px}
 
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  /* moves */
+  .moves{display:flex;flex-direction:column;gap:8px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:1px solid #e6eefc;background:#fff;cursor:pointer;font-weight:600}
+  .btn.primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none}
+  .btn.ghost{background:transparent}
+  .move-meta{font-size:12px;color:var(--muted);margin-left:auto}
 
-    <style>
-        .leaflet-control-zoom { display: none !important; }
-        
-        .mood-glow-orb {
-            border-radius: 50%;
-            filter: blur(15px);
-            opacity: 0.7;
-            transition: all 0.8s ease-in-out;
-            animation: pulse 3s infinite alternate;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.5; }
-            100% { transform: scale(1.3); opacity: 0.8; }
-        }
-        
-        .traffic-line-anim {
-            stroke-dasharray: 10;
-            animation: dash 20s linear infinite;
-        }
-        @keyframes dash { to { stroke-dashoffset: -1000; } }
+  /* donors */
+  .donor{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:10px;background:#fbfdff;border:1px solid #eef6f6}
+  .donor .left{display:flex;gap:10px;align-items:center}
+  .avatar{width:40px;height:40px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent)}
+  .donor .meta{font-size:13px;color:var(--muted)}
+  .donor .action{display:flex;gap:8px}
 
-        .custom-mood-marker { background: transparent; border: none; }
+  /* voter list */
+  .voter{padding:10px;border-radius:10px;background:#fff;border:1px solid #eef2ff;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+  .voter .left{display:flex;flex-direction:column}
+  .voter .name{font-weight:700}
+  .voter .small{font-size:13px;color:var(--muted)}
 
-        /* Weather Micro-Climates */
-        .weather-container { position: absolute; inset: -40px; pointer-events: none; z-index: 0; overflow: visible; }
-        .heat-wave { position: absolute; bottom: 20%; width: 4px; height: 25px; background: linear-gradient(to top, transparent, rgba(239, 68, 68, 0.8), transparent); border-radius: 50%; filter: blur(2px); animation: heatRise 2s infinite ease-in; }
-        @keyframes heatRise { 0% { transform: translateY(0) scaleX(1) skewX(0deg); opacity: 0; } 30% { opacity: 1; transform: translateY(-15px) scaleX(1.5) skewX(15deg); } 70% { opacity: 0.8; transform: translateY(-35px) scaleX(1.2) skewX(-15deg); } 100% { transform: translateY(-50px) scaleX(1) skewX(0deg); opacity: 0; } }
-        .wind-gust { position: absolute; height: 2px; background: linear-gradient(to right, transparent, rgba(251, 191, 36, 0.9), transparent); border-radius: 2px; animation: windBlow 1.8s infinite linear; box-shadow: 0 0 5px rgba(251, 191, 36, 0.5); }
-        @keyframes windBlow { 0% { transform: translateX(-40px) scaleX(0.5); opacity: 0; width: 10px; } 20% { opacity: 1; transform: translateX(-10px) scaleX(1); width: 40px; } 80% { opacity: 1; transform: translateX(30px) scaleX(1.2); width: 50px; } 100% { transform: translateX(60px) scaleX(0.5); opacity: 0; width: 20px; } }
-        .wind-curve { position: absolute; width: 50px; height: 20px; border-top: 2px solid rgba(251, 191, 36, 0.4); border-radius: 50%; animation: windCurveBlow 2.5s infinite ease-in-out; }
-        @keyframes windCurveBlow { 0% { transform: translateX(-30px) translateY(10px); opacity: 0; } 50% { opacity: 1; transform: translateX(10px) translateY(-5px); } 100% { transform: translateX(50px) translateY(-20px); opacity: 0; } }
-        .smooth-pulse { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 2px solid rgba(16, 185, 129, 0.6); border-radius: 50%; animation: coolPulse 4s infinite ease-out; box-shadow: inset 0 0 15px rgba(16, 185, 129, 0.2); }
-        @keyframes coolPulse { 0% { width: 40px; height: 40px; opacity: 1; border-width: 3px; } 100% { width: 140px; height: 140px; opacity: 0; border-width: 0px; } }
-        .cool-sparkle { position: absolute; width: 4px; height: 4px; background: rgba(16, 185, 129, 0.9); border-radius: 50%; box-shadow: 0 0 8px rgba(16, 185, 129, 1); animation: floatUp 3s infinite ease-in-out; }
-        @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 50% { opacity: 1; transform: translateY(-20px) scale(1.2); } 100% { transform: translateY(-40px) scale(0.5); opacity: 0; } }
-    </style>
+  /* right column */
+  .dashboard{display:flex;flex-direction:column;gap:12px}
+  .chart-card{padding:12px;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfdff);box-shadow:var(--shadow);border:1px solid #eef2ff}
+  .controls{display:flex;gap:8px;align-items:center}
+  .range{width:100%}
+  .log{height:160px;overflow:auto;padding:10px;border-radius:10px;background:#fff;border:1px solid #eef2ff;font-size:13px;color:var(--muted)}
+  .footer{font-size:13px;color:var(--muted);margin-top:8px}
+
+  /* small helpers */
+  .row{display:flex;gap:8px;align-items:center}
+  .chip{padding:6px 8px;border-radius:999px;background:#f1f5f9;font-size:12px;color:var(--muted)}
+  .badge{background:#eef2ff;color:var(--accent);padding:6px 8px;border-radius:8px;font-weight:700}
+  code{font-family:var(--mono);background:#f8fafc;padding:2px 6px;border-radius:6px;font-size:12px}
+</style>
 </head>
-<body class="bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100 overflow-hidden h-screen w-screen font-sans flex flex-col relative transition-colors duration-300">
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo">MLA</div>
+      <div>
+        <h1>Future MLA — Mayiladuthurai Prototype</h1>
+        <div class="subtitle">Indicator‑driven civic simulation • Party funds from local sources • Classroom ready</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="chip">Tamil UI ready</div>
+      <div class="chip">Offline friendly</div>
+    </div>
+  </header>
 
-    <div id="real-map" class="absolute inset-0 w-full h-full z-0 cursor-crosshair"></div>
+  <div class="grid">
+    <!-- LEFT: controls, indicators, moves, donors -->
+    <div class="panel">
+      <h3 class="section-title">Local Indicators</h3>
+      <div id="indicators" class="muted"></div>
 
-    <div class="absolute top-4 left-4 right-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-4 rounded-2xl z-20 shadow-xl flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center max-w-3xl mx-auto transition-colors duration-300">
-        <div>
-            <h1 class="text-sm font-bold tracking-wide text-slate-800 dark:text-slate-300 uppercase flex items-center gap-2">
-                TN Mood Map <span class="text-xs bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 px-2 py-0.5 rounded-md normal-case font-normal">Live Map</span>
-            </h1>
-            <p class="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mt-0.5 font-mono">
-                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span> GPS Telemetry Active
-            </p>
-        </div>
-        
-        <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-            <button id="toggle-traffic-btn" class="text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-1.5 transition-colors shadow-sm">
-                🛣️ <span id="traffic-btn-text">Show Live Traffic</span>
-            </button>
-            <span id="active-count" class="text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 font-mono shadow-inner transition-colors">
-                0 Nodes Active
-            </span>
-        </div>
+      <h3 class="section-title" style="margin-top:12px">Campaign Moves</h3>
+      <div id="moves" class="moves"></div>
+
+      <h3 class="section-title" style="margin-top:12px">Fundraising Moves (sources of Party Funds)</h3>
+      <div id="fundMoves" class="moves"></div>
+
+      <h3 class="section-title" style="margin-top:12px">Donor Panel</h3>
+      <div id="donorList" style="display:flex;flex-direction:column;gap:8px"></div>
+
+      <h3 class="section-title" style="margin-top:12px">Quick KPIs</h3>
+      <div class="kpis">
+        <div class="kpi"><div class="label">Campaign Budget</div><div id="k_budget" class="value">₹0</div></div>
+        <div class="kpi"><div class="label">Party Funds</div><div id="k_party" class="value">₹0</div></div>
+        <div class="kpi"><div class="label">Reputation</div><div id="k_rep" class="value">0</div></div>
+      </div>
+
+      <h3 class="section-title" style="margin-top:12px">Voter Groups</h3>
+      <div id="voterList"></div>
+
+      <h3 class="section-title" style="margin-top:12px">Event Log</h3>
+      <div id="log" class="log"></div>
     </div>
 
-    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 z-20 w-[90%] max-w-xs pointer-events-none">
-        <p class="text-[10px] text-slate-700 dark:text-slate-300 bg-white/90 dark:bg-slate-900/90 px-3 py-1 rounded-full backdrop-blur-sm border border-slate-300 dark:border-slate-800 shadow-sm whitespace-nowrap">
-            👆 Tap anywhere on the map to drop a pin
-        </p>
-        <button id="open-drawer-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-xl font-bold shadow-[0_0_25px_rgba(37,99,235,0.4)] flex items-center justify-center gap-2 transition-all pointer-events-auto">
-            📍 Or Type Location
-        </button>
-    </div>
+    <!-- RIGHT: analytics and controls -->
+    <div class="dashboard">
+      <div class="chart-card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:700">Analytics Dashboard</div>
+            <div class="muted" style="margin-top:4px">Vote share by voter archetype • Time series</div>
+          </div>
+          <div class="badge" id="turnBadge">Turn 0</div>
+        </div>
+        <div style="margin-top:12px">
+          <canvas id="voteChart" height="220"></canvas>
+        </div>
+      </div>
 
-    <div id="checkin-drawer" class="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl p-6 z-30 transition-all duration-500 transform translate-y-full shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-2xl max-w-md mx-auto">
-        <div class="w-12 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-5"></div>
-        
-        <h2 id="drawer-title" class="text-xl font-bold text-center mb-1 text-slate-900 dark:text-white">Statewide Vibe Input</h2>
-        <p class="text-xs text-slate-500 dark:text-slate-400 text-center mb-5">Add your location to the real Tamil Nadu grid.</p>
-        
-        <div class="mb-5">
-            <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">Location Name</label>
-            <input type="text" id="user-location-input" placeholder="e.g., Trichy, Custom Area..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3.5 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="muted">Controls</div>
+            <div style="font-weight:700">Spend intensity & Party actions</div>
+          </div>
+          <div class="chip">Professional UI</div>
         </div>
 
-        <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">Select Vibe Level</label>
-        <div class="flex flex-col gap-2.5 mb-6">
-            <button class="mood-submit-btn flex items-center gap-3 w-full bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-900/50 p-3 rounded-xl text-left transition-colors relative overflow-hidden group" data-color="bg-red-500" data-text="Semma Tension">
-                <span class="text-xl relative z-10">🔴</span>
-                <div class="relative z-10">
-                    <p class="text-sm font-semibold text-red-800 dark:text-red-200">Semma Tension (High Stress)</p>
-                    <p class="text-[10px] text-red-600 dark:text-red-400/70">Generates heat wave anomalies</p>
-                </div>
-            </button>
-
-            <button class="mood-submit-btn flex items-center gap-3 w-full bg-amber-50 dark:bg-amber-950/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-900/50 p-3 rounded-xl text-left transition-colors relative overflow-hidden group" data-color="bg-amber-400" data-text="Chill / Polaama">
-                <span class="text-xl relative z-10">🟡</span>
-                <div class="relative z-10">
-                    <p class="text-sm font-semibold text-amber-800 dark:text-amber-200">Chill / Polaama (Moderate)</p>
-                    <p class="text-[10px] text-amber-600 dark:text-amber-400/70">Summons monsoonal wind patterns</p>
-                </div>
-            </button>
-
-            <button class="mood-submit-btn flex items-center gap-3 w-full bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-900/50 p-3 rounded-xl text-left transition-colors relative overflow-hidden group" data-color="bg-emerald-500" data-text="Smooth Vibe">
-                <span class="text-xl relative z-10">🟢</span>
-                <div class="relative z-10">
-                    <p class="text-sm font-semibold text-emerald-800 dark:text-emerald-200">Smooth Vibe (Focused)</p>
-                    <p class="text-[10px] text-emerald-600 dark:text-emerald-400/70">Projects a cool, stable aura</p>
-                </div>
-            </button>
+        <div style="margin-top:12px" class="row">
+          <input id="spendAmount" class="range" type="range" min="0" max="100" value="50" />
         </div>
 
-        <button id="close-drawer-btn" class="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 py-3 rounded-xl text-xs font-medium tracking-wide transition-colors">Cancel</button>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button id="endTurn" class="btn primary">End Turn</button>
+          <button id="resetBtn" class="btn">Reset</button>
+        </div>
+
+        <div style="margin-top:12px" class="settings">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <button id="requestPartyFunds" class="btn">Request Party Match</button>
+            <button id="transferFromParty" class="btn primary">Transfer to Campaign</button>
+            <select id="transferTransparency" style="padding:8px;border-radius:8px;border:1px solid #eef2ff">
+              <option value="transparent">Transparent</option>
+              <option value="opaque">Opaque (faster)</option>
+            </select>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+            <label class="muted">Audit sensitivity</label>
+            <input id="auditSensitivity" type="range" min="0" max="10" value="2" />
+          </div>
+
+          <div style="margin-top:10px" class="muted">Teacher overrides and data editing available in settings (or via code for prototype).</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">Vote Breakdown</div>
+          <div class="muted">Normalized by sentiment × size</div>
+        </div>
+        <div id="voteBreakdown" style="margin-top:10px" class="muted"></div>
+      </div>
+
     </div>
+  </div>
+</div>
 
-    <script>
-        // 1. Initialize the Real Map Engine
-        const map = L.map('real-map').setView([10.7905, 78.7047], 7);
-        let currentTileLayer = null;
+<!-- ===========================
+     Script: Simulation engine
+     - Keeps previous indicator-driven voter init
+     - Adds Party Funds sources: local broker, shop owner, contractor, union leader, temple committee, diaspora, philanthropist, small donors
+     - Professional UI bindings and polished logs
+   =========================== -->
+<script>
+/* ---------- Indicators (illustrative) ---------- */
+let indicators = {
+  povertyRate: 0.18,
+  schoolAttendance: 0.86,
+  waterAccess: 0.92,
+  fisherDependency: 0.12,
+  agParticipation: 0.28
+};
 
-        // 2. System Theme Dynamic Switching for Map Tiles
-        function updateMapTheme(e) {
-            if (currentTileLayer) map.removeLayer(currentTileLayer);
-            const isDark = e.matches;
-            const tileUrl = isDark 
-                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
-                : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-            currentTileLayer = L.tileLayer(tileUrl, { attribution: '&copy; CARTO' }).addTo(map);
+/* ---------- Mapping constants ---------- */
+const MAPPING = {
+  baseline: 0.50,
+  povertyImpact: -0.6,
+  attendanceImpact: 0.8,
+  waterImpact: 0.5,
+  agImpact: -0.4,
+  clampMin: 0.05,
+  clampMax: 0.95
+};
+
+/* ---------- Voter archetypes ---------- */
+const archetypesBase = [
+  { id: 'youth', name: 'Youth (18-30)', size: 0.22 },
+  { id: 'farmers', name: 'Farmers', size: 0.20 },
+  { id: 'fisher', name: 'Fisherfolk', size: indicators.fisherDependency },
+  { id: 'women', name: 'Women', size: 0.18 },
+  { id: 'seniors', name: 'Seniors', size: 0.16 },
+  { id: 'business', name: 'Small Business', size: 0.12 }
+];
+
+/* ---------- Campaign moves ---------- */
+const MOVES = {
+  road:   { name: 'Repair Roads', cost: 80, effects: { farmers: 0.06, business: 0.04, seniors: 0.03 } },
+  school: { name: 'School Grants', cost: 60, effects: { youth: 0.07, women: 0.05 } },
+  water:  { name: 'Install Water Tanks', cost: 70, effects: { fisher: 0.08, women: 0.04 } },
+  rally:  { name: 'Hold Rally', cost: 30, effects: { youth: 0.04, seniors: 0.02 } },
+  ad:     { name: 'Local Ads', cost: 20, effects: { business: 0.03, youth: 0.02 } }
+};
+
+/* ---------- Fundraising moves (party funds sources) ---------- */
+const FUND_MOVES = {
+  fundraiser: { name: 'Host Fundraiser', cost: 20, baseRaise: 120, reach: { broker: 0.6, shopOwner: 0.6, contractor: 0.5, philanthropist: 0.4 } },
+  crowdfunding: { name: 'Crowdfunding Drive', cost: 5, baseRaise: 40, reach: { smallDonor: 0.9 } },
+  membership: { name: 'Membership Dues Drive', cost: 0, baseRaise: 30, reach: { smallDonor: 0.6 } },
+  applyGrant: { name: 'Apply for Local Grant', cost: 10, baseRaise: 200, reach: { grant: 1.0 } },
+  templeAppeal: { name: 'Temple Committee Appeal', cost: 5, baseRaise: 80, reach: { temple: 0.8 } },
+  shopDrive: { name: 'Shop Owners Drive', cost: 8, baseRaise: 90, reach: { shopOwner: 0.9 } }
+};
+
+/* ---------- Donor archetypes (expanded local sources) ---------- */
+const DONORS = [
+  { id: 'broker', name: 'Local Broker', baseProb: 0.45, maxGift: 200, responsiveness: 0.9 },
+  { id: 'shopOwner', name: 'Shop Owner', baseProb: 0.6, maxGift: 80, responsiveness: 0.8 },
+  { id: 'contractor', name: 'Contractor', baseProb: 0.35, maxGift: 250, responsiveness: 0.85 },
+  { id: 'union', name: 'Union Leader', baseProb: 0.3, maxGift: 120, responsiveness: 0.7 },
+  { id: 'temple', name: 'Temple Committee', baseProb: 0.25, maxGift: 300, responsiveness: 0.6 },
+  { id: 'philanthropist', name: 'Philanthropist', baseProb: 0.15, maxGift: 500, responsiveness: 0.8 },
+  { id: 'diaspora', name: 'Diaspora', baseProb: 0.25, maxGift: 80, responsiveness: 0.7 },
+  { id: 'smallDonor', name: 'Small Donor', baseProb: 0.6, maxGift: 20, responsiveness: 0.6 }
+];
+
+/* ---------- Simulation state ---------- */
+let state = {
+  budget: indicators.povertyRate > 0.15 ? 450 : 520,
+  partyFunds: 400,
+  reputation: 50,
+  corruptionScore: 0,
+  turn: 0,
+  voterGroups: [],
+  history: [],
+  auditSensitivity: 0.02
+};
+
+/* ---------- DOM refs ---------- */
+const refs = {
+  indicators: document.getElementById('indicators'),
+  moves: document.getElementById('moves'),
+  fundMoves: document.getElementById('fundMoves'),
+  donorList: document.getElementById('donorList'),
+  voterList: document.getElementById('voterList'),
+  log: document.getElementById('log'),
+  kBudget: document.getElementById('k_budget'),
+  kParty: document.getElementById('k_party'),
+  kRep: document.getElementById('k_rep'),
+  voteBreakdown: document.getElementById('voteBreakdown'),
+  spendAmount: document.getElementById('spendAmount'),
+  endTurn: document.getElementById('endTurn'),
+  resetBtn: document.getElementById('resetBtn'),
+  requestPartyFunds: document.getElementById('requestPartyFunds'),
+  transferFromParty: document.getElementById('transferFromParty'),
+  transferTransparency: document.getElementById('transferTransparency'),
+  auditSensitivity: document.getElementById('auditSensitivity'),
+  turnBadge: document.getElementById('turnBadge')
+};
+
+/* ---------- Chart setup ---------- */
+const ctx = document.getElementById('voteChart').getContext('2d');
+let voteChart = new Chart(ctx, {
+  type: 'line',
+  data: { labels: [], datasets: [] },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'bottom' } },
+    scales: { y: { beginAtZero: true, max: 100 } }
+  }
+});
+
+/* ---------- UI renderers ---------- */
+function renderIndicatorPanel(){
+  refs.indicators.innerHTML = `
+    <div><strong>Poverty rate</strong>: ${(indicators.povertyRate*100).toFixed(1)}%</div>
+    <div><strong>School attendance</strong>: ${(indicators.schoolAttendance*100).toFixed(0)}%</div>
+    <div><strong>Water access</strong>: ${(indicators.waterAccess*100).toFixed(0)}%</div>
+    <div><strong>Fisher dependency</strong>: ${(indicators.fisherDependency*100).toFixed(0)}%</div>
+    <div class="muted" style="margin-top:8px">Data placeholders for classroom use. Teachers can override values in settings or code.</div>
+  `;
+}
+
+function computeInitialVoterGroups(){
+  return archetypesBase.map(a=>{
+    let s = MAPPING.baseline;
+    if(a.id === 'youth' || a.id === 'business') s += MAPPING.povertyImpact * indicators.povertyRate;
+    if(a.id === 'youth' || a.id === 'women') s += MAPPING.attendanceImpact * (indicators.schoolAttendance - 0.75);
+    if(a.id === 'fisher' || a.id === 'women') s += MAPPING.waterImpact * (indicators.waterAccess - 0.8);
+    if(a.id === 'farmers'){
+      s += MAPPING.agImpact * (indicators.agParticipation - 0.2);
+      s += MAPPING.povertyImpact * (indicators.povertyRate * 0.5);
+    }
+    const sentiment = clamp(s, MAPPING.clampMin, MAPPING.clampMax);
+    const responsiveness = 0.5 + Math.random() * 0.6;
+    return { ...a, sentiment, responsiveness };
+  });
+}
+
+function renderMoves(){
+  refs.moves.innerHTML = '';
+  Object.keys(MOVES).forEach(k=>{
+    const m = MOVES[k];
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.innerHTML = `<span>${m.name}</span><span class="move-meta">₹${m.cost}</span>`;
+    btn.onclick = () => applyMove(k);
+    refs.moves.appendChild(btn);
+  });
+
+  refs.fundMoves.innerHTML = '';
+  Object.keys(FUND_MOVES).forEach(k=>{
+    const fm = FUND_MOVES[k];
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.innerHTML = `<span>${fm.name}</span><span class="move-meta">cost ₹${fm.cost}</span>`;
+    btn.onclick = () => runFundMove(k);
+    refs.fundMoves.appendChild(btn);
+  });
+}
+
+function renderDonors(){
+  refs.donorList.innerHTML = '';
+  DONORS.forEach(d=>{
+    const div = document.createElement('div');
+    div.className = 'donor';
+    div.innerHTML = `<div class="left"><div class="avatar">${d.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
+      <div><div style="font-weight:700">${d.name}</div><div class="meta">Max ₹${d.maxGift}</div></div></div>
+      <div class="action"><button class="btn" onclick="simulateDirectDonation('${d.id}')">Solicit</button></div>`;
+    refs.donorList.appendChild(div);
+  });
+}
+
+function renderVoters(){
+  refs.voterList.innerHTML = '';
+  state.voterGroups.forEach(g=>{
+    const div = document.createElement('div');
+    div.className = 'voter';
+    div.innerHTML = `<div class="left"><div class="name">${g.name}</div><div class="small">Size ${(g.size*100).toFixed(0)}%</div></div>
+      <div style="text-align:right"><div class="small">Sentiment</div><div style="font-weight:700" id="sent-${g.id}">${(g.sentiment*100).toFixed(0)}%</div></div>`;
+    refs.voterList.appendChild(div);
+  });
+}
+
+/* ---------- Core campaign functions ---------- */
+function applyMove(moveKey){
+  const move = MOVES[moveKey];
+  const spend = Number(refs.spendAmount.value);
+  const totalCost = Math.max(move.cost, Math.round(move.cost * (spend/100)));
+  if(totalCost > state.budget){ appendLog(`Not enough campaign budget for ${move.name}. Need ₹${totalCost}.`); return; }
+  state.budget -= totalCost;
+  state.reputation = clamp(state.reputation + Math.round(totalCost / 50), 0, 100);
+  Object.keys(move.effects).forEach(gid=>{
+    const group = state.voterGroups.find(x => x.id === gid);
+    if(!group) return;
+    const base = move.effects[gid];
+    const delta = base * (spend / 100) * group.responsiveness;
+    group.sentiment = clamp(group.sentiment + delta, 0, 1);
+    const elSent = document.getElementById(`sent-${group.id}`);
+    if(elSent) elSent.textContent = `${(group.sentiment*100).toFixed(0)}%`;
+  });
+  appendLog(`Applied ${move.name} spending ₹${totalCost}.`);
+  updateKPIs(); pushHistory(); updateChart();
+}
+
+/* ---------- Fundraising mechanics: obtaining Party Funds ---------- */
+function runFundMove(key){
+  const fm = FUND_MOVES[key];
+  if(fm.cost > state.budget){ appendLog(`Not enough campaign budget to run ${fm.name}. Need ₹${fm.cost}.`); return; }
+  state.budget -= fm.cost;
+
+  let raised = 0;
+
+  Object.keys(fm.reach).forEach(reachKey => {
+    const reach = fm.reach[reachKey];
+
+    // local donors
+    const donor = DONORS.find(d => d.id === reachKey);
+    if(donor){
+      const prob = donor.baseProb * donor.responsiveness * (state.reputation / 100) * reach;
+      if(Math.random() < prob){
+        const gift = Math.round(donor.maxGift * (0.4 + Math.random() * 0.6));
+        raised += gift;
+      }
+    }
+
+    // small donors many small gifts
+    if(reachKey === 'smallDonor'){
+      const donorSmall = DONORS.find(d => d.id === 'smallDonor');
+      const count = Math.round(10 * (state.reputation / 100) * reach);
+      for(let i=0;i<count;i++){
+        if(Math.random() < donorSmall.baseProb * donorSmall.responsiveness){
+          raised += Math.round(2 + Math.random() * 18);
         }
-        const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        darkModeQuery.addEventListener('change', updateMapTheme);
-        updateMapTheme(darkModeQuery); 
+      }
+    }
 
-        // 3. Real World Latitude / Longitude Dictionary
-        const tnGeography = {
-            "chennai": [13.0827, 80.2707], "vellore": [12.9165, 79.1325], "salem": [11.6643, 78.1460],
-            "coimbatore": [11.0168, 76.9558], "erode": [11.3410, 77.7172], "trichy": [10.7905, 78.7047],
-            "thanjavur": [10.7870, 79.1378], "madurai": [9.9252, 78.1198], "thoothukudi": [8.7642, 78.1348],
-            "tirunelveli": [8.7139, 77.7567], "kanyakumari": [8.0883, 77.5385]
-        };
+    // grants
+    if(reachKey === 'grant'){
+      const grantProb = clamp(0.5 + (state.reputation - 50) / 200, 0.1, 0.95);
+      if(Math.random() < grantProb){
+        raised += fm.baseRaise;
+      }
+    }
+  });
 
-        let activePinCount = 0;
-        let activeMarkerBeingEdited = null; 
-        let pendingClickCoords = null; 
-        let activeNodesList = []; // Array tracking all currently dropped marker coordinates
+  // platform fee for crowdfunding
+  if(key === 'crowdfunding') raised = Math.round(raised * 0.92);
 
-        const drawer = document.getElementById("checkin-drawer");
-        const locationInput = document.getElementById("user-location-input");
-        const drawerTitle = document.getElementById("drawer-title");
+  // add to party funds
+  state.partyFunds += raised;
+  appendLog(`${fm.name} raised ₹${raised} added to Party Funds.`);
+  updateKPIs(); pushHistory();
+}
 
-        // 4. Map Click Event -> Pick Location
-        map.on('click', function(e) {
-            pendingClickCoords = [e.latlng.lat, e.latlng.lng];
-            activeMarkerBeingEdited = null; 
-            drawerTitle.innerText = "Location Picked";
-            locationInput.value = "";
-            locationInput.placeholder = "Name this spot (e.g., College Campus)";
-            drawer.classList.remove("translate-y-full");
-            locationInput.focus();
-        });
+/* Direct solicitation of a donor (button on donor card) */
+function simulateDirectDonation(donorId){
+  const donor = DONORS.find(d => d.id === donorId);
+  if(!donor) return;
+  const prob = donor.baseProb * donor.responsiveness * (state.reputation / 100);
+  if(Math.random() < prob){
+    const gift = Math.round(donor.maxGift * (0.4 + Math.random() * 0.6));
+    state.partyFunds += gift;
+    appendLog(`Solicited ${donor.name}: donated ₹${gift} to Party Funds.`);
+  } else {
+    appendLog(`Solicitation to ${donor.name} did not yield a donation.`);
+  }
+  updateKPIs(); pushHistory();
+}
 
-        // Dynamic Traffic Lines Setup
-        const trafficLines = L.featureGroup();
+/* ---------- Party match and transfers ---------- */
+refs.requestPartyFunds.onclick = () => {
+  const matchRate = 0.5 * (state.reputation / 100);
+  const requested = Math.round(state.budget * 0.2);
+  const available = state.partyFunds;
+  const match = Math.min(Math.round(requested * matchRate), available);
+  if(match <= 0){
+    appendLog('Party declined to match funds. Improve reputation to get party support.');
+    return;
+  }
+  state.partyFunds -= match;
+  state.budget += match;
+  appendLog(`Party matched ₹${match} to campaign budget.`);
+  updateKPIs(); pushHistory(); updateChart();
+};
 
-        // Recalculate traffic vectors dynamically based on active nodes
-        function updateTrafficTelemetry() {
-            trafficLines.clearLayers();
-            if (activeNodesList.length > 1) {
-                for (let i = 0; i < activeNodesList.length - 1; i++) {
-                    const startCoords = activeNodesList[i].coords;
-                    const endCoords = activeNodesList[i + 1].coords;
-                    const moodColor = activeNodesList[i + 1].color;
+refs.transferFromParty.onclick = () => {
+  const transparency = refs.transferTransparency.value;
+  const amount = Math.min(Math.round(state.partyFunds * 0.5), 400);
+  if(amount <= 0){ appendLog('No party funds available to transfer.'); return; }
 
-                    let lineColor = '#10b981'; // Default smooth
-                    if (moodColor.includes('red')) lineColor = '#ef4444';
-                    if (moodColor.includes('amber')) lineColor = '#f59e0b';
+  if(transparency === 'transparent'){
+    state.partyFunds -= amount;
+    state.budget += amount;
+    appendLog(`Transparent transfer: ₹${amount} moved from Party Funds to campaign.`);
+  } else {
+    state.partyFunds -= amount;
+    state.budget += amount;
+    state.corruptionScore += 0.08;
+    state.reputation = clamp(state.reputation - 6, 0, 100);
+    appendLog(`Opaque transfer: ₹${amount} moved quickly. Corruption score increased.`);
+  }
+  updateKPIs(); pushHistory(); checkForAudit(); updateChart();
+};
 
-                    const polyline = L.polyline([startCoords, endCoords], {
-                        color: lineColor,
-                        weight: 4,
-                        className: 'traffic-line-anim'
-                    });
-                    trafficLines.addLayer(polyline);
-                }
-            }
-        }
+/* ---------- Audit mechanics ---------- */
+function checkForAudit(){
+  const base = Number(refs.auditSensitivity.value) / 1000;
+  const prob = base + state.corruptionScore * 0.18 - (state.reputation / 100) * 0.01;
+  if(Math.random() < prob){
+    const frozen = Math.round(state.partyFunds * 0.5);
+    state.partyFunds -= frozen;
+    state.reputation = clamp(state.reputation - 12, 0, 100);
+    appendLog(`Audit triggered: ₹${frozen} frozen from Party Funds. Reputation reduced.`);
+  }
+}
 
-        let trafficActive = false;
-        document.getElementById("toggle-traffic-btn").addEventListener("click", (e) => {
-            trafficActive = !trafficActive;
-            const btn = e.currentTarget;
-            const btnText = document.getElementById("traffic-btn-text");
-            
-            if (trafficActive) {
-                map.addLayer(trafficLines);
-                btn.classList.add("bg-blue-100", "dark:bg-blue-950", "border-blue-300", "dark:border-blue-500/50", "text-blue-700", "dark:text-blue-300");
-                btnText.innerText = "Hide State Traffic";
-            } else {
-                map.removeLayer(trafficLines);
-                btn.classList.remove("bg-blue-100", "dark:bg-blue-950", "border-blue-300", "dark:border-blue-500/50", "text-blue-700", "dark:text-blue-300");
-                btnText.innerText = "Show Live Traffic";
-            }
-        });
+/* ---------- Turn progression ---------- */
+function endTurn(){
+  state.turn += 1;
+  refs.turnBadge.textContent = `Turn ${state.turn}`;
+  state.voterGroups.forEach(g=>{
+    const drift = (Math.random() * 0.02) * (Math.random() > 0.85 ? -1 : 1);
+    g.sentiment = clamp(g.sentiment - Math.abs(drift), 0, 1);
+    const elSent = document.getElementById(`sent-${g.id}`);
+    if(elSent) elSent.textContent = `${(g.sentiment*100).toFixed(0)}%`;
+  });
+  const passive = Math.round( (state.reputation / 100) * 8 );
+  state.partyFunds += passive;
+  appendLog(`Turn ${state.turn} ended. Passive donations ₹${passive} added to Party Funds.`);
+  updateKPIs(); renderVoters(); pushHistory(); updateChart();
+}
 
-        // Seed Initial Data
-        window.addEventListener("DOMContentLoaded", () => {
-            dropPin("Chennai", "bg-red-500", "Semma Tension", tnGeography["chennai"]);
-            dropPin("Coimbatore", "bg-amber-400", "Chill / Polaama", tnGeography["coimbatore"]);
-            dropPin("Madurai", "bg-emerald-500", "Smooth Vibe", tnGeography["madurai"]);
-        });
+/* ---------- Vote conversion and charting ---------- */
+function computeVoteBreakdown(){
+  const weighted = state.voterGroups.reduce((acc, g) => acc + g.sentiment * g.size, 0);
+  return state.voterGroups.map(g => {
+    const share = weighted > 0 ? (g.sentiment * g.size / weighted) * 100 : (g.size * 100 / state.voterGroups.length);
+    return { id: g.id, name: g.name, share };
+  });
+}
 
-        // Drawer Controls
-        document.getElementById("open-drawer-btn").addEventListener("click", () => {
-            activeMarkerBeingEdited = null; 
-            pendingClickCoords = null; 
-            drawerTitle.innerText = "Statewide Vibe Input";
-            locationInput.value = "";
-            locationInput.placeholder = "e.g., Trichy, Salem, Custom Area...";
-            drawer.classList.remove("translate-y-full");
-            locationInput.focus();
-        });
+function resetChart(){
+  voteChart.data.labels = [];
+  voteChart.data.datasets = state.voterGroups.map(g => ({ label: g.name, data: [], borderWidth: 2, fill: false, tension: 0.2 }));
+  voteChart.update();
+}
 
-        document.getElementById("close-drawer-btn").addEventListener("click", () => {
-            activeMarkerBeingEdited = null;
-            pendingClickCoords = null;
-            drawer.classList.add("translate-y-full");
-            locationInput.value = "";
-        });
+function updateChart(){
+  const label = `T${state.turn}`;
+  voteChart.data.labels.push(label);
+  const breakdown = computeVoteBreakdown();
+  voteChart.data.datasets.forEach(ds => {
+    const b = breakdown.find(x => x.name === ds.label);
+    ds.data.push(b ? b.share : 0);
+  });
+  voteChart.update();
+  renderVoteBreakdown();
+}
 
-        // Submit Pin
-        document.querySelectorAll(".mood-submit-btn").forEach(btn => {
-            btn.addEventListener("click", () => {
-                let targetCity = locationInput.value.trim();
-                
-                if (!targetCity) {
-                    if (pendingClickCoords) targetCity = "Custom Spot";
-                    else { alert("Please enter a location name!"); return; }
-                }
+function renderVoteBreakdown(){
+  const breakdown = computeVoteBreakdown();
+  refs.voteBreakdown.innerHTML = breakdown.map(b => `<div style="margin-bottom:6px"><strong>${b.name}</strong>: ${b.share.toFixed(1)}%</div>`).join('');
+}
 
-                const chosenColor = btn.getAttribute("data-color");
-                const chosenStatusText = btn.getAttribute("data-text");
+/* ---------- History, logging, utilities ---------- */
+function pushHistory(){
+  state.history.push({ turn: state.turn, budget: state.budget, partyFunds: state.partyFunds, rep: state.reputation, groups: state.voterGroups.map(g => ({ id: g.id, sentiment: g.sentiment })) });
+}
 
-                if (activeMarkerBeingEdited !== null) {
-                    map.removeLayer(activeMarkerBeingEdited);
-                    activeNodesList = activeNodesList.filter(node => node.marker !== activeMarkerBeingEdited);
-                    activePinCount--; 
-                    activeMarkerBeingEdited = null; 
-                }
+function appendLog(text){
+  const time = new Date().toLocaleTimeString();
+  refs.log.innerHTML = `<div>[${time}] ${text}</div>` + refs.log.innerHTML;
+}
 
-                dropPin(targetCity, chosenColor, chosenStatusText, pendingClickCoords);
-                
-                drawer.classList.add("translate-y-full");
-                locationInput.value = "";
-                pendingClickCoords = null;
-            });
-        });
+function updateKPIs(){
+  refs.kBudget.textContent = `₹${state.budget}`;
+  refs.kParty.textContent = `₹${state.partyFunds}`;
+  refs.kRep.textContent = `${state.reputation}`;
+}
 
-        // Core Pin Engine
-        function dropPin(cityName, colorClass, statusText, exactCoords = null) {
-            const normalizedKey = cityName.toLowerCase().replace(/[^a-z]/g, "");
-            let coords = [];
+function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
 
-            if (exactCoords) {
-                coords = exactCoords; 
-            } else if (tnGeography[normalizedKey]) {
-                const jitterLat = (Math.random() - 0.5) * 0.05;
-                const jitterLng = (Math.random() - 0.5) * 0.05;
-                coords = [tnGeography[normalizedKey][0] + jitterLat, tnGeography[normalizedKey][1] + jitterLng];
-            } else {
-                const randomLat = 8.5 + Math.random() * 4.5;
-                const randomLng = 76.5 + Math.random() * 3.5;
-                coords = [randomLat, randomLng];
-            }
+/* ---------- Reset and init ---------- */
+refs.resetBtn.onclick = () => initSimulation(false);
+refs.endTurn.onclick = endTurn;
 
-            let textColor = "text-slate-600 dark:text-slate-400";
-            let weatherAnimations = "";
+function initSimulation(keepBudget){
+  renderIndicatorPanel();
+  state.voterGroups = computeInitialVoterGroups();
+  if(!keepBudget) state.budget = indicators.povertyRate > 0.15 ? 450 : 520;
+  state.partyFunds = 400;
+  state.reputation = 50;
+  state.corruptionScore = 0;
+  state.turn = 0;
+  state.history = [];
+  renderMoves();
+  renderDonors();
+  renderVoters();
+  updateKPIs();
+  resetChart();
+  pushHistory();
+  updateChart();
+  appendLog('Simulation initialized with expanded local Party Funds sources.');
+}
 
-            if(colorClass.includes("red")) {
-                textColor = "text-red-600 dark:text-red-400";
-                weatherAnimations = `<div class="weather-container"><div class="heat-wave" style="left: 30%; animation-delay: 0s;"></div><div class="heat-wave" style="left: 50%; animation-delay: 0.6s;"></div><div class="heat-wave" style="left: 70%; animation-delay: 1.2s; height: 35px;"></div></div>`;
-            } else if(colorClass.includes("amber")) {
-                textColor = "text-amber-600 dark:text-amber-400";
-                weatherAnimations = `<div class="weather-container"><div class="wind-gust" style="top: 25%; animation-delay: 0s;"></div><div class="wind-gust" style="top: 50%; animation-delay: 0.8s;"></div><div class="wind-curve" style="top: 30%; left: 10%; animation-delay: 0.2s;"></div></div>`;
-            } else if(colorClass.includes("emerald")) {
-                textColor = "text-emerald-600 dark:text-emerald-400";
-                weatherAnimations = `<div class="weather-container"><div class="smooth-pulse" style="animation-delay: 0s;"></div><div class="cool-sparkle" style="left: 20%; top: 40%; animation-delay: 0s;"></div><div class="cool-sparkle" style="left: 70%; top: 60%; animation-delay: 1.5s;"></div></div>`;
-            }
+/* ---------- initial render ---------- */
+initSimulation(false);
 
-            const markerHTML = `
-                <div class="relative flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform duration-300" style="width: 120px; height: 120px;">
-                    ${weatherAnimations}
-                    <div class="mood-glow-orb absolute inset-0 m-auto w-12 h-12 ${colorClass}"></div>
-                    <div class="relative bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl shadow-[0_5px_15px_rgba(0,0,0,0.1)] dark:shadow-2xl backdrop-blur-md z-10 whitespace-nowrap group hover:border-slate-400 dark:hover:border-slate-500 transition-colors">
-                        <p class="text-[11px] font-bold text-slate-800 dark:text-slate-100 capitalize text-center tracking-wide">${cityName}</p>
-                        <p class="text-[9px] ${textColor} font-mono mt-0.5 text-center font-semibold">${statusText}</p>
-                    </div>
-                </div>
-            `;
-
-            const customIcon = L.divIcon({ className: 'custom-mood-marker', html: markerHTML, iconSize: [0, 0] });
-            const newMarker = L.marker(coords, { icon: customIcon }).addTo(map);
-
-            newMarker.on('click', (e) => {
-                L.DomEvent.stopPropagation(e); // Stop Leaflet map click triggering when clicking marker
-                activeMarkerBeingEdited = newMarker;
-                pendingClickCoords = coords; 
-                drawerTitle.innerText = `Edit Vibe: ${cityName}`;
-                locationInput.value = cityName;
-                drawer.classList.remove("translate-y-full");
-            });
-
-            // Append new item configuration to our live array tracker
-            activeNodesList.push({
-                marker: newMarker,
-                coords: coords,
-                color: colorClass
-            });
-
-            // Trigger telemetry path update
-            updateTrafficTelemetry();
-
-            map.flyTo(coords, 8, { duration: 1.5 });
-
-            activePinCount++;
-            document.getElementById("active-count").innerText = `${activePinCount} Nodes Active`;
-        }
-    </script>
+/* expose simulateDirectDonation to global scope for inline onclick */
+window.simulateDirectDonation = simulateDirectDonation;
+</script>
 </body>
 </html>
