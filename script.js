@@ -1,5 +1,4 @@
-// ==================== FULL ORIGINAL SIMULATION LOGIC (unchanged) ====================
-// All core game data, state, moves, fundraising, donors, etc. are preserved.
+// ==================== ORIGINAL SIMULATION DATA (unchanged) ====================
 const indicators = {
   povertyRate: 0.18,
   schoolAttendance: 0.86,
@@ -56,21 +55,69 @@ const REGIONS = {
   'Kanyakumari': { zone: 'south', regionName: 'Far South Region' },
   'Thanjavur': { zone: 'east', regionName: 'East Coastal Region' }
 };
-const regionNews = { chennai:[{headline:"Metro Water Shortage Eases", effect:{waterAccess:0.03}, repChange:2}], north:[{headline:"Power Grid Upgrade", effect:{}, repChange:1}], south:[{headline:"New Fishing Harbour", effect:{}, repChange:2}], west:[{headline:"Textile Revival", effect:{}, repChange:2}], east:[{headline:"Coastal Erosion Threat", effect:{}, repChange:-2}], central:[{headline:"Smart City Project", effect:{}, repChange:2}] };
-regionNews.chennai = regionNews.chennai || [];
+const regionNews = { 
+  chennai:[{headline:"Metro Water Shortage Eases", effect:{waterAccess:0.03}, repChange:2}],
+  north:[{headline:"Power Grid Upgrade", effect:{}, repChange:1}],
+  south:[{headline:"New Fishing Harbour", effect:{}, repChange:2}],
+  west:[{headline:"Textile Revival", effect:{}, repChange:2}],
+  east:[{headline:"Coastal Erosion Threat", effect:{}, repChange:-2}],
+  central:[{headline:"Smart City Project", effect:{}, repChange:2}] 
+};
 function getRegionForConstituency(c){ return REGIONS[c]||{zone:'central',regionName:'Central'}; }
 function triggerRegionalNews(){ if(state.gameOver || Math.random()>0.25) return; const sel=document.getElementById('constituencySelect').value; const ri=getRegionForConstituency(sel); let pool=regionNews[ri.zone]||regionNews.central; if(!pool.length) pool=regionNews.central; const news=pool[Math.floor(Math.random()*pool.length)]; if(news.effect?.waterAccess) indicators.waterAccess=clamp(indicators.waterAccess+news.effect.waterAccess,0.5,0.98); if(news.repChange) state.reputation=clamp(state.reputation+news.repChange,0,100); appendLog(`📰 [${ri.regionName}] ${news.headline} → Rep ${news.repChange>=0?`+${news.repChange}`:news.repChange}`); updateKPIs(); renderVotersHorizontal(); }
 
+// ---------- STATE ----------
 let state = { budget:450, partyFunds:400, reputation:50, corruptionScore:0, turn:0, daysLeft:90, voterGroups:[], history:[], gameOver:false, microTargetGroup:null, opponent:{reputation:45,partyFunds:300} };
 let microTargetActive=false, chart=null, playInterval=null;
-const refs = {};
-['moves','fundMoves','donorList','voterListHorizontal','log','kBudget','kParty','kRep','voteChart','playBtn','stepForward','speed','toggleSent','toggleFunds','turnBadge','resetBtn','opponentStats','electionResultBadge','toggleMicroBtn','microTargetStatus','matchPartyBtn','transferTransparentBtn','transferOpaqueBtn','dataTable'].forEach(id=>{ refs[id]=document.getElementById(id); });
-if(!refs.dataTable){ const tbl=document.createElement('table'); tbl.id='dataTable'; tbl.innerHTML='<tbody></tbody>'; document.body.appendChild(tbl); refs.dataTable=tbl.querySelector('tbody'); }
-function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+// ---------- DOM references (corrected) ----------
+const getEl = (id) => document.getElementById(id);
+const refs = {
+  moves: getEl('moves'),
+  fundMoves: getEl('fundMoves'),
+  donorList: getEl('donorList'),
+  voterListHorizontal: getEl('voterListHorizontal'),
+  log: getEl('log'),
+  kBudget: getEl('k_budget'),
+  kParty: getEl('k_party'),
+  kRep: getEl('k_rep'),
+  voteChart: getEl('voteChart'),
+  playBtn: getEl('playBtn'),
+  stepForward: getEl('stepForward'),
+  speed: getEl('speed'),
+  toggleSent: getEl('toggleSent'),
+  toggleFunds: getEl('toggleFunds'),
+  turnBadge: getEl('turnBadge'),
+  resetBtn: getEl('resetBtn'),
+  opponentStats: getEl('opponentStats'),
+  electionResultBadge: getEl('electionResultBadge'),
+  toggleMicroBtn: getEl('toggleMicroBtn'),
+  microTargetStatus: getEl('microTargetStatus'),
+  matchPartyBtn: getEl('matchPartyBtn'),
+  transferTransparentBtn: getEl('transferTransparentBtn'),
+  transferOpaqueBtn: getEl('transferOpaqueBtn'),
+  dataTableBody: getEl('dataTableBody')   // fixed: using tbody directly
+};
+
+// ---------- Helper functions ----------
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 function now(){ return new Date().toLocaleTimeString(); }
 function appendLog(text){ if(refs.log) refs.log.innerHTML=`<div>[${now()}] ${text}</div>`+refs.log.innerHTML; }
-function updateKPIs(){ refs.kBudget.textContent=`₹${Math.round(state.budget)}`; refs.kParty.textContent=`₹${Math.round(state.partyFunds)}`; refs.kRep.textContent=`${Math.round(state.reputation)}`; }
-function renderVotersHorizontal(){ if(!refs.voterListHorizontal) return; refs.voterListHorizontal.innerHTML=''; state.voterGroups.forEach(g=>{ const card=document.createElement('div'); card.className='voter-card'; card.innerHTML=`<div class="voter-name">${g.name}</div><div class="voter-size">${(g.size*100).toFixed(0)}%</div><div class="sentiment-value" id="sent-${g.id}">${(g.sentiment*100).toFixed(0)}%</div>`; refs.voterListHorizontal.appendChild(card); }); }
+function updateKPIs(){ 
+  refs.kBudget.textContent=`₹${Math.round(state.budget)}`; 
+  refs.kParty.textContent=`₹${Math.round(state.partyFunds)}`; 
+  refs.kRep.textContent=`${Math.round(state.reputation)}`; 
+}
+function renderVotersHorizontal(){ 
+  if(!refs.voterListHorizontal) return; 
+  refs.voterListHorizontal.innerHTML=''; 
+  state.voterGroups.forEach(g=>{ 
+    const card=document.createElement('div'); 
+    card.className='voter-card'; 
+    card.innerHTML=`<div class="voter-name">${g.name}</div><div class="voter-size">${(g.size*100).toFixed(0)}%</div><div class="sentiment-value" id="sent-${g.id}">${(g.sentiment*100).toFixed(0)}%</div>`; 
+    refs.voterListHorizontal.appendChild(card); 
+  }); 
+}
 function flashSentiment(id){ const el=document.getElementById(`sent-${id}`); if(el){ el.style.transform='scale(1.1)'; setTimeout(()=>el.style.transform='',150); } }
 function computeInitialVoterGroups(){ return archetypesBase.map(a=>{ let s=MAPPING.baseline; if(a.id==='youth'||a.id==='business') s+=MAPPING.povertyImpact*indicators.povertyRate; if(a.id==='youth'||a.id==='women') s+=MAPPING.attendanceImpact*(indicators.schoolAttendance-0.75); if(a.id==='fisher'||a.id==='women') s+=MAPPING.waterImpact*(indicators.waterAccess-0.8); if(a.id==='farmers'){ s+=MAPPING.agImpact*(indicators.agParticipation-0.2); s+=MAPPING.povertyImpact*(indicators.povertyRate*0.5); } return {...a, sentiment:clamp(s,MAPPING.clampMin,MAPPING.clampMax), responsiveness:0.5+Math.random()*0.6}; }); }
 function applyDynamicIndicators(effects){ if(effects.povertyRate) indicators.povertyRate=clamp(indicators.povertyRate+effects.povertyRate,0.05,0.6); if(effects.schoolAttendance) indicators.schoolAttendance=clamp(indicators.schoolAttendance+effects.schoolAttendance,0.5,0.98); if(effects.waterAccess) indicators.waterAccess=clamp(indicators.waterAccess+effects.waterAccess,0.5,0.98); }
@@ -84,14 +131,42 @@ function checkForAudit(){ let prob=0.002+state.corruptionScore*0.18-(state.reput
 function opponentMove(){ if(state.gameOver) return; state.opponent.reputation=clamp(state.opponent.reputation+(Math.random()*2-0.5),20,80); const moveKeys=Object.keys(MOVES); const randomMove=MOVES[moveKeys[Math.floor(Math.random()*moveKeys.length)]]; if(state.opponent.partyFunds>=randomMove.cost){ state.opponent.partyFunds-=randomMove.cost; state.opponent.reputation=clamp(state.opponent.reputation+1,0,100); appendLog(`🤖 OPPONENT: ${randomMove.name} → their reputation +1`); } updateOpponentStats(); }
 function updateOpponentStats(){ const oppVote=computeOpponentVoteShare(); refs.opponentStats.innerHTML=`Reputation: ${Math.round(state.opponent.reputation)} | Vote: ${(oppVote*100).toFixed(1)}%`; }
 function computeOpponentVoteShare(){ return clamp(0.3+(state.opponent.reputation/100)*0.3,0.2,0.7); }
-function endTurn(){ if(state.gameOver) return; if(state.daysLeft<=0){ declareElectionResult(); return; } state.daysLeft--; state.turn++; refs.turnBadge.textContent=`DAY ${90-state.daysLeft} / 90`; state.voterGroups.forEach(g=>{ const drift=(Math.random()*0.02)*(Math.random()>0.85?-1:1); g.sentiment=clamp(g.sentiment+drift,0,1); flashSentiment(g.id); }); const passive=Math.round((state.reputation/100)*8); state.partyFunds+=passive; appendLog(`🌙 Day ${90-state.daysLeft} ended. Passive income +₹${passive}.`); opponentMove(); triggerRegionalNews(); renderVotersHorizontal(); pushHistory(); updateChart(); updateTable(); updateKPIs(); updateOpponentStats(); if(state.daysLeft===0) declareElectionResult(); }
+function endTurn(){ 
+  if(state.gameOver) return; 
+  if(state.daysLeft<=0){ declareElectionResult(); return; } 
+  state.daysLeft--; 
+  state.turn++; 
+  refs.turnBadge.textContent=`DAY ${90-state.daysLeft} / 90`; 
+  state.voterGroups.forEach(g=>{ const drift=(Math.random()*0.02)*(Math.random()>0.85?-1:1); g.sentiment=clamp(g.sentiment+drift,0,1); flashSentiment(g.id); }); 
+  const passive=Math.round((state.reputation/100)*8); 
+  state.partyFunds+=passive; 
+  appendLog(`🌙 Day ${90-state.daysLeft} ended. Passive income +₹${passive}.`); 
+  opponentMove(); 
+  triggerRegionalNews(); 
+  renderVotersHorizontal(); 
+  pushHistory(); 
+  updateChart(); 
+  updateTable(); 
+  updateKPIs(); 
+  updateOpponentStats(); 
+  if(state.daysLeft===0) declareElectionResult(); 
+}
 function declareElectionResult(){ state.gameOver=true; if(playInterval) clearInterval(playInterval); const playerShare=computePlayerVoteShare(); const oppShare=computeOpponentVoteShare(); const won=playerShare>oppShare; refs.electionResultBadge.innerHTML=won?"🏆 YOU WIN!":"😞 YOU LOST"; appendLog(`📢 ELECTION RESULT: Your vote ${(playerShare*100).toFixed(1)}% vs Opponent ${(oppShare*100).toFixed(1)}%. ${won?"YOU WON!":"YOU LOST."}`); if(refs.playBtn) refs.playBtn.disabled=true; if(refs.stepForward) refs.stepForward.disabled=true; }
 function computePlayerVoteShare(){ return clamp(state.voterGroups.reduce((a,g)=>a+g.sentiment*g.size,0),0.2,0.85); }
 function pushHistory(){ state.history.push({ turn:state.turn, budget:state.budget, partyFunds:state.partyFunds, rep:state.reputation, groups:state.voterGroups.map(g=>({id:g.id,sentiment:g.sentiment})) }); if(state.history.length>30) state.history.shift(); }
-function updateTable(){ if(!refs.dataTable) return; refs.dataTable.innerHTML=''; state.history.slice(-10).forEach(h=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${h.turn}<\/td><td>₹${Math.round(h.budget)}<\/td><td>₹${Math.round(h.partyFunds)}<\/td><td>${Math.round(h.rep)}<\/td><td>-<\/td>`; refs.dataTable.appendChild(tr); }); }
+function updateTable(){ 
+  if(!refs.dataTableBody) return; 
+  refs.dataTableBody.innerHTML=''; 
+  state.history.slice(-10).forEach(h=>{ 
+    const tr=document.createElement('tr'); 
+    tr.innerHTML=`<td>${h.turn}</td><td>₹${Math.round(h.budget)}</td><td>₹${Math.round(h.partyFunds)}</td><td>${Math.round(h.rep)}</td><td>-</td>`; 
+    refs.dataTableBody.appendChild(tr); 
+  }); 
+}
 function randomColorFor(id){ const map={ youth:'#3b82f6', farmers:'#ef4444', fisher:'#06b6d4', women:'#a78bfa', seniors:'#f59e0b', business:'#10b981' }; return map[id]||'#64748b'; }
 function rebuildChart() {
   if(!refs.voteChart) return;
+  if(state.history.length === 0) return;
   const labels = state.history.map((_,idx)=>`D${idx}`);
   const datasets = state.voterGroups.map(g=>({ label:g.name, data:[], borderColor:randomColorFor(g.id), borderWidth:2, fill:false, tension:0.2 }));
   state.history.forEach(snap=>{
@@ -120,42 +195,47 @@ function renderMovesAndDonors() {
   if(refs.fundMoves){ refs.fundMoves.innerHTML=''; Object.keys(FUND_MOVES).forEach(k=>{ const fm=FUND_MOVES[k]; const btn=document.createElement('button'); btn.className='btn-minimal'; btn.textContent=`${fm.name} — ₹${fm.cost}`; btn.onclick=()=>runFundMove(k); refs.fundMoves.appendChild(btn); }); }
   if(refs.donorList){ refs.donorList.innerHTML=''; DONORS.forEach(d=>{ const div=document.createElement('div'); div.className='donor-item'; div.innerHTML=`<div><strong>${d.name}</strong><div style="font-size:0.7rem;">Max ₹${d.maxGift}</div></div><div><button class="btn-minimal" style="padding:0.2rem 0.6rem;" onclick="simulateDirectDonation('${d.id}')">Solicit</button></div>`; refs.donorList.appendChild(div); }); }
 }
-function resetSimulation() { if(playInterval){ clearInterval(playInterval); playInterval=null; if(refs.playBtn) refs.playBtn.textContent='Play'; } state = { budget:450, partyFunds:400, reputation:50, corruptionScore:0, turn:0, daysLeft:90, voterGroups:computeInitialVoterGroups(), history:[], gameOver:false, microTargetGroup:null, opponent:{ reputation:45, partyFunds:300 } }; microTargetActive=false; if(refs.toggleMicroBtn) refs.toggleMicroBtn.textContent='Micro-target OFF'; if(refs.microTargetStatus) refs.microTargetStatus.innerHTML=''; if(refs.log) refs.log.innerHTML=''; renderVotersHorizontal(); renderMovesAndDonors(); updateKPIs(); pushHistory(); rebuildChart(); updateTable(); updateOpponentStats(); if(refs.electionResultBadge) refs.electionResultBadge.innerHTML=''; if(refs.turnBadge) refs.turnBadge.textContent="DAY 0 / 90"; if(refs.playBtn) refs.playBtn.disabled=false; if(refs.stepForward) refs.stepForward.disabled=false; appendLog("Simulation reset. New: API tips & auto-play with monetisation."); }
+function resetSimulation() { 
+  if(playInterval){ clearInterval(playInterval); playInterval=null; if(refs.playBtn) refs.playBtn.textContent='Play'; } 
+  state = { budget:450, partyFunds:400, reputation:50, corruptionScore:0, turn:0, daysLeft:90, voterGroups:computeInitialVoterGroups(), history:[], gameOver:false, microTargetGroup:null, opponent:{ reputation:45, partyFunds:300 } }; 
+  microTargetActive=false; 
+  if(refs.toggleMicroBtn) refs.toggleMicroBtn.textContent='Micro-target OFF'; 
+  if(refs.microTargetStatus) refs.microTargetStatus.innerHTML=''; 
+  if(refs.log) refs.log.innerHTML=''; 
+  renderVotersHorizontal(); 
+  renderMovesAndDonors(); 
+  updateKPIs(); 
+  pushHistory(); 
+  rebuildChart(); 
+  updateTable(); 
+  updateOpponentStats(); 
+  if(refs.electionResultBadge) refs.electionResultBadge.innerHTML=''; 
+  if(refs.turnBadge) refs.turnBadge.textContent="DAY 0 / 90"; 
+  if(refs.playBtn) refs.playBtn.disabled=false; 
+  if(refs.stepForward) refs.stepForward.disabled=false; 
+  appendLog("Simulation reset. New: API tips & auto-play with monetisation."); 
+}
 
 // ==================== NEW FEATURES: API TIPS, AUTO-PLAY, MONETISATION ====================
 let freeTipsLeft = 3;
 let freeAutoLeft = 3;
-const tipCost = 20;    // campaign budget
+const tipCost = 20;
 const autoCost = 50;
-
 async function fetchPoliticalTip() {
   const constituency = document.getElementById('constituencySelect').value;
   const region = getRegionForConstituency(constituency).regionName;
   try {
-    // Using free GNews API demo endpoint (limited but works for demo)
-    // No API key required for demo – returns sample data. Replace with your own key for production.
     const url = `https://gnews.io/api/v4/search?q=politics%20tamil%20nadu%20${encodeURIComponent(constituency)}&lang=en&country=in&max=1&token=demo`;
     const res = await fetch(url);
     const data = await res.json();
     let headline = "No political news found.";
-    if(data.articles && data.articles.length>0) {
-      headline = data.articles[0].title;
-    } else {
-      // fallback mock
-      headline = `${region}: Government announces new infrastructure plan.`;
-    }
+    if(data.articles && data.articles.length>0) headline = data.articles[0].title;
+    else headline = `${region}: Government announces new infrastructure plan.`;
     return `📰 ${headline}`;
-  } catch(e) {
-    console.warn("API error, using fallback", e);
-    return `📰 ${region}: Local civic budget review scheduled.`;
-  }
+  } catch(e) { return `📰 ${region}: Local civic budget review scheduled.`; }
 }
-
 async function getTipWithCost() {
-  if(state.gameOver){
-    appendLog("Election over. Cannot request tips.");
-    return;
-  }
+  if(state.gameOver){ appendLog("Election over. Cannot request tips."); return; }
   if(freeTipsLeft > 0){
     freeTipsLeft--;
     const tipText = await fetchPoliticalTip();
@@ -169,16 +249,10 @@ async function getTipWithCost() {
     const tipText = await fetchPoliticalTip();
     appendLog(`💰 Paid tip (₹${tipCost}): ${tipText}`);
     document.getElementById('tipCostInfo').innerHTML = `✨ Tips left: 0 free · ₹${tipCost} each (budget ₹${Math.round(state.budget)})`;
-  } else {
-    appendLog(`❌ Not enough campaign budget for tip (need ₹${tipCost}).`);
-  }
+  } else { appendLog(`❌ Not enough campaign budget for tip (need ₹${tipCost}).`); }
 }
-
 function autoPlayTurn() {
-  if(state.gameOver){
-    appendLog("Election over. Cannot auto-play.");
-    return;
-  }
+  if(state.gameOver){ appendLog("Election over. Cannot auto-play."); return; }
   if(freeAutoLeft > 0){
     freeAutoLeft--;
     appendLog(`🤖 AUTO-PLAY (free, ${3-freeAutoLeft}/3 used) – simulating a random move...`);
@@ -196,9 +270,7 @@ function autoPlayTurn() {
     const randomMoveKey = movesKeys[Math.floor(Math.random() * movesKeys.length)];
     applyMove(randomMoveKey);
     document.getElementById('autoCostInfo').innerHTML = `🤖 Auto turns left: 0 free · ₹${autoCost} each (budget ₹${Math.round(state.budget)})`;
-  } else {
-    appendLog(`❌ Cannot auto-play: need ₹${autoCost} campaign budget.`);
-  }
+  } else { appendLog(`❌ Cannot auto-play: need ₹${autoCost} campaign budget.`); }
 }
 
 // bind new buttons
