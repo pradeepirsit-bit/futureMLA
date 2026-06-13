@@ -3,8 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Future MLA — Working Simulation Prototype</title>
-<!-- Chart.js CDN -->
+<title>Future MLA — Corrected Simulation Prototype</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   :root{
@@ -19,24 +18,23 @@
   h1{font-size:18px;margin:0}
   .layout{display:grid;grid-template-columns:320px 1fr;gap:16px;margin-top:12px}
   @media (max-width:900px){ .layout{grid-template-columns:1fr} }
-
   .card{background:var(--card);border-radius:12px;padding:12px;box-shadow:var(--shadow)}
   .muted{color:var(--muted);font-size:13px}
   .kpis{display:flex;gap:8px;margin-bottom:10px}
   .kpi{flex:1;padding:8px;border-radius:8px;background:#fff;border:1px solid #eef2ff;text-align:center}
   .kpi .label{font-size:12px;color:var(--muted)}
   .kpi .value{font-weight:700;margin-top:6px}
-
   .moves{display:flex;flex-direction:column;gap:8px}
   .btn{padding:8px 10px;border-radius:8px;border:1px solid #e6eefc;background:#fff;cursor:pointer;font-weight:600}
   .btn.primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none}
-  .donor{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:#fbfdff;border:1px solid #eef6f6}
+  .donor{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:#fbfdff;border:1px solid #eef6f6;margin-bottom:6px}
   .voter{display:flex;justify-content:space-between;padding:8px;border-radius:8px;background:#fff;border:1px solid #eef2ff;margin-bottom:8px}
   .log{height:140px;overflow:auto;padding:8px;border-radius:8px;background:#fff;border:1px solid #eef2ff;font-size:13px;color:var(--muted)}
   .table{width:100%;border-collapse:collapse;margin-top:8px}
   .table th,.table td{padding:6px;border-bottom:1px solid #f1f5f9;text-align:left;font-size:13px}
   .controls{display:flex;gap:8px;align-items:center;margin-top:8px}
   .small{font-size:13px;color:var(--muted)}
+  .party-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -45,11 +43,11 @@
     <div class="brand">
       <div class="logo">MLA</div>
       <div>
-        <h1>Future MLA — Working Prototype</h1>
-        <div class="muted">Indicator-driven simulation • Local party funds • Play & analyze</div>
+        <h1>Future MLA — Corrected Simulation</h1>
+        <div class="muted">Indicator-driven • Fixed chart, step back, party transfers, audit logic</div>
       </div>
     </div>
-    <div class="small">Prototype — Mayiladuthurai</div>
+    <div class="small">Mayiladuthurai</div>
   </header>
 
   <div class="layout">
@@ -59,7 +57,6 @@
       <div id="indicators" class="muted" style="margin-top:6px"></div>
 
       <hr style="margin:10px 0">
-
       <div><strong>Campaign Moves</strong></div>
       <div id="moves" class="moves" style="margin-top:8px"></div>
 
@@ -69,8 +66,14 @@
       <div style="margin-top:10px"><strong>Donor Panel</strong></div>
       <div id="donorList" style="margin-top:8px"></div>
 
-      <hr style="margin:10px 0">
+      <div style="margin-top:10px"><strong>Party Actions</strong></div>
+      <div class="party-actions">
+        <button id="matchPartyBtn" class="btn">Request Party Match</button>
+        <button id="transferTransparentBtn" class="btn">Transparent Transfer</button>
+        <button id="transferOpaqueBtn" class="btn" style="border-color:#dc2626;">Opaque Transfer</button>
+      </div>
 
+      <hr style="margin:10px 0">
       <div class="kpis">
         <div class="kpi"><div class="label">Campaign Budget</div><div id="k_budget" class="value">₹0</div></div>
         <div class="kpi"><div class="label">Party Funds</div><div id="k_party" class="value">₹0</div></div>
@@ -81,7 +84,6 @@
       <div id="voterList" style="margin-top:8px"></div>
 
       <hr style="margin:10px 0">
-
       <div><strong>Event Log</strong></div>
       <div id="log" class="log"></div>
     </div>
@@ -90,39 +92,33 @@
     <div>
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>Analytics</strong><div class="muted">Vote share time series & quick controls</div></div>
+          <div><strong>Analytics</strong><div class="muted">Vote share & overlays</div></div>
           <div class="small" id="turnBadge">Turn 0</div>
         </div>
-
         <div style="margin-top:10px">
           <canvas id="voteChart" height="220"></canvas>
         </div>
-
         <div class="controls">
           <button id="playBtn" class="btn">Play</button>
           <button id="stepBack" class="btn">Step ‹</button>
           <button id="stepForward" class="btn primary">Step ›</button>
           <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-            <label class="small">Speed</label>
+            <label class="small">Speed (ms)</label>
             <input id="speed" type="range" min="200" max="1200" value="700" />
           </div>
         </div>
-
         <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-          <label class="small"><input id="toggleVote" type="checkbox" checked /> Vote</label>
-          <label class="small"><input id="toggleSent" type="checkbox" /> Sentiment</label>
+          <label class="small"><input id="toggleVote" type="checkbox" checked disabled /> Vote (base)</label>
+          <label class="small"><input id="toggleSent" type="checkbox" /> Sentiment (avg)</label>
           <label class="small"><input id="toggleFunds" type="checkbox" /> Party Funds</label>
           <button id="resetBtn" class="btn" style="margin-left:auto">Reset</button>
         </div>
       </div>
 
       <div class="card" style="margin-top:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>Per-turn table</strong></div>
-          <div class="small">Quick overview</div>
-        </div>
+        <div><strong>Turn-by-turn summary</strong><div class="muted">One row per completed turn</div></div>
         <table class="table" id="dataTable">
-          <thead><tr><th>Turn</th><th>Budget</th><th>Party Funds</th><th>Reputation</th><th>Event</th></tr></thead>
+          <thead><tr><th>Turn</th><th>Budget</th><th>Party Funds</th><th>Reputation</th><th>Key Event</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -132,13 +128,16 @@
 
 <script>
 /* -------------------------
-   Working Simulation Prototype
-   - Compact, self-contained, and runnable
-   - Preserves indicator-driven initialization, moves, fundraising, party funds, transfers, audits
-   - Simple analytics with Chart.js and play/step controls
+   FIXED SIMULATION
+   - chart overlays handled cleanly (rebuilt on every update)
+   - step back works via full state reload
+   - party actions have buttons
+   - audit probability capped, corruptionScore limited
+   - history stores turn snapshots only (not every action)
+   - speed slider updates interval while playing
+   - reset stops interval
    ------------------------- */
 
-/* ---------- Indicators (example values) ---------- */
 const indicators = {
   povertyRate: 0.18,
   schoolAttendance: 0.86,
@@ -147,7 +146,6 @@ const indicators = {
   agParticipation: 0.28
 };
 
-/* ---------- Mapping constants ---------- */
 const MAPPING = {
   baseline: 0.50,
   povertyImpact: -0.6,
@@ -158,7 +156,6 @@ const MAPPING = {
   clampMax: 0.95
 };
 
-/* ---------- Archetypes & moves ---------- */
 const archetypesBase = [
   { id: 'youth', name: 'Youth (18-30)', size: 0.22 },
   { id: 'farmers', name: 'Farmers', size: 0.20 },
@@ -196,19 +193,22 @@ const DONORS = [
   { id: 'smallDonor', name: 'Small Donor', baseProb: 0.6, maxGift: 20, responsiveness: 0.6 }
 ];
 
-/* ---------- State ---------- */
+// State
 let state = {
-  budget: indicators.povertyRate > 0.15 ? 450 : 520,
-  partyFunds: 400,
+  budget: 0,
+  partyFunds: 0,
   reputation: 50,
   corruptionScore: 0,
   turn: 0,
   voterGroups: [],
-  history: [],
-  events: []
+  turnSnapshots: []   // each snapshot = { turn, budget, partyFunds, rep, groupSentiments, keyEventName }
 };
 
-/* ---------- DOM refs ---------- */
+let playInterval = null;
+let chart = null;
+const ctx = document.getElementById('voteChart').getContext('2d');
+
+// DOM refs
 const refs = {
   indicators: document.getElementById('indicators'),
   moves: document.getElementById('moves'),
@@ -219,32 +219,68 @@ const refs = {
   kBudget: document.getElementById('k_budget'),
   kParty: document.getElementById('k_party'),
   kRep: document.getElementById('k_rep'),
-  voteChart: document.getElementById('voteChart'),
   playBtn: document.getElementById('playBtn'),
   stepBack: document.getElementById('stepBack'),
   stepForward: document.getElementById('stepForward'),
   speed: document.getElementById('speed'),
-  toggleVote: document.getElementById('toggleVote'),
   toggleSent: document.getElementById('toggleSent'),
   toggleFunds: document.getElementById('toggleFunds'),
   dataTable: document.getElementById('dataTable').querySelector('tbody'),
   turnBadge: document.getElementById('turnBadge'),
-  resetBtn: document.getElementById('resetBtn')
+  resetBtn: document.getElementById('resetBtn'),
+  matchPartyBtn: document.getElementById('matchPartyBtn'),
+  transferTransparentBtn: document.getElementById('transferTransparentBtn'),
+  transferOpaqueBtn: document.getElementById('transferOpaqueBtn')
 };
 
-/* ---------- Helpers ---------- */
-function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
-function now(){ return new Date().toLocaleTimeString(); }
-function appendLog(text){ refs.log.innerHTML = `<div>[${now()}] ${text}</div>` + refs.log.innerHTML; }
+// Helpers
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function now() { return new Date().toLocaleTimeString(); }
+function appendLog(text) { refs.log.innerHTML = `<div>[${now()}] ${text}</div>` + refs.log.innerHTML; }
+function updateKPIs() {
+  refs.kBudget.textContent = `₹${Math.round(state.budget)}`;
+  refs.kParty.textContent = `₹${Math.round(state.partyFunds)}`;
+  refs.kRep.textContent = `${Math.round(state.reputation)}`;
+}
 
-/* ---------- Initialization ---------- */
-function computeInitialVoterGroups(){
-  return archetypesBase.map(a=>{
+// Voter sentiment displays (update after changes)
+function updateSentimentDisplays() {
+  state.voterGroups.forEach(g => {
+    const el = document.getElementById(`sent-${g.id}`);
+    if (el) el.textContent = `${Math.round(g.sentiment * 100)}%`;
+  });
+}
+
+// Render voter list (creates HTML with unique IDs)
+function renderVoters() {
+  refs.voterList.innerHTML = '';
+  state.voterGroups.forEach(g => {
+    const div = document.createElement('div');
+    div.className = 'voter';
+    div.innerHTML = `<div><div style="font-weight:700">${g.name}</div><div class="muted">Size ${(g.size*100).toFixed(0)}%</div></div>
+                     <div style="text-align:right"><div class="muted">Sentiment</div><div style="font-weight:700" id="sent-${g.id}">${Math.round(g.sentiment*100)}%</div></div>`;
+    refs.voterList.appendChild(div);
+  });
+}
+
+// Indicator panel
+function renderIndicatorPanel() {
+  refs.indicators.innerHTML = `
+    <div><strong>Poverty</strong>: ${(indicators.povertyRate*100).toFixed(1)}%</div>
+    <div><strong>School attendance</strong>: ${(indicators.schoolAttendance*100).toFixed(0)}%</div>
+    <div><strong>Water access</strong>: ${(indicators.waterAccess*100).toFixed(0)}%</div>
+    <div class="muted" style="margin-top:6px">Fixed local indicators</div>
+  `;
+}
+
+// Compute initial sentiments
+function computeInitialVoterGroups() {
+  return archetypesBase.map(a => {
     let s = MAPPING.baseline;
-    if(a.id === 'youth' || a.id === 'business') s += MAPPING.povertyImpact * indicators.povertyRate;
-    if(a.id === 'youth' || a.id === 'women') s += MAPPING.attendanceImpact * (indicators.schoolAttendance - 0.75);
-    if(a.id === 'fisher' || a.id === 'women') s += MAPPING.waterImpact * (indicators.waterAccess - 0.8);
-    if(a.id === 'farmers'){
+    if (a.id === 'youth' || a.id === 'business') s += MAPPING.povertyImpact * indicators.povertyRate;
+    if (a.id === 'youth' || a.id === 'women') s += MAPPING.attendanceImpact * (indicators.schoolAttendance - 0.75);
+    if (a.id === 'fisher' || a.id === 'women') s += MAPPING.waterImpact * (indicators.waterAccess - 0.8);
+    if (a.id === 'farmers') {
       s += MAPPING.agImpact * (indicators.agParticipation - 0.2);
       s += MAPPING.povertyImpact * (indicators.povertyRate * 0.5);
     }
@@ -254,370 +290,364 @@ function computeInitialVoterGroups(){
   });
 }
 
-/* ---------- Render UI lists ---------- */
-function renderIndicatorPanel(){
-  refs.indicators.innerHTML = `
-    <div><strong>Poverty</strong>: ${(indicators.povertyRate*100).toFixed(1)}%</div>
-    <div><strong>School attendance</strong>: ${(indicators.schoolAttendance*100).toFixed(0)}%</div>
-    <div><strong>Water access</strong>: ${(indicators.waterAccess*100).toFixed(0)}%</div>
-    <div class="muted" style="margin-top:6px">Values are illustrative; teachers can edit them in code.</div>
-  `;
-}
-
-function renderMoves(){
-  refs.moves.innerHTML = '';
-  Object.keys(MOVES).forEach(k=>{
-    const m = MOVES[k];
-    const btn = document.createElement('button');
-    btn.className = 'btn';
-    btn.textContent = `${m.name} — ₹${m.cost}`;
-    btn.onclick = () => applyMove(k);
-    refs.moves.appendChild(btn);
-  });
-
-  refs.fundMoves.innerHTML = '';
-  Object.keys(FUND_MOVES).forEach(k=>{
-    const fm = FUND_MOVES[k];
-    const btn = document.createElement('button');
-    btn.className = 'btn';
-    btn.textContent = `${fm.name} — cost ₹${fm.cost}`;
-    btn.onclick = () => runFundMove(k);
-    refs.fundMoves.appendChild(btn);
-  });
-}
-
-function renderDonors(){
-  refs.donorList.innerHTML = '';
-  DONORS.forEach(d=>{
-    const div = document.createElement('div');
-    div.className = 'donor';
-    div.innerHTML = `<div><strong>${d.name}</strong><div class="muted">Max ₹${d.maxGift}</div></div><div><button class="btn" onclick="simulateDirectDonation('${d.id}')">Solicit</button></div>`;
-    refs.donorList.appendChild(div);
-  });
-}
-
-function renderVoters(){
-  refs.voterList.innerHTML = '';
-  state.voterGroups.forEach(g=>{
-    const div = document.createElement('div');
-    div.className = 'voter';
-    div.innerHTML = `<div><div style="font-weight:700">${g.name}</div><div class="muted">Size ${(g.size*100).toFixed(0)}%</div></div><div style="text-align:right"><div class="muted">Sentiment</div><div style="font-weight:700" id="sent-${g.id}">${(g.sentiment*100).toFixed(0)}%</div></div>`;
-    refs.voterList.appendChild(div);
-  });
-}
-
-/* ---------- Core simulation ---------- */
-function applyMove(moveKey){
-  const move = MOVES[moveKey];
-  const spend = Number(refs.speed.value) > 0 ? 50 : 50; // placeholder for intensity
-  const totalCost = Math.max(move.cost, Math.round(move.cost * (spend/100)));
-  if(totalCost > state.budget){ appendLog(`Not enough campaign budget for ${move.name}. Need ₹${totalCost}.`); return; }
-  state.budget -= totalCost;
-  state.reputation = clamp(state.reputation + Math.round(totalCost / 50), 0, 100);
-  Object.keys(move.effects).forEach(gid=>{
-    const group = state.voterGroups.find(x => x.id === gid);
-    if(!group) return;
-    const base = move.effects[gid];
-    const delta = base * (spend / 100) * group.responsiveness;
-    group.sentiment = clamp(group.sentiment + delta, 0, 1);
-    const el = document.getElementById(`sent-${group.id}`);
-    if(el) el.textContent = `${(group.sentiment*100).toFixed(0)}%`;
-  });
-  appendLog(`Applied ${move.name} spending ₹${totalCost}.`);
-  recordEvent({type:'move', turn: state.turn, name: move.name, amount: totalCost});
-  updateKPIs(); pushHistory(); updateChart(); updateTable();
-}
-
-function runFundMove(key){
-  const fm = FUND_MOVES[key];
-  if(fm.cost > state.budget){ appendLog(`Not enough campaign budget to run ${fm.name}. Need ₹${fm.cost}.`); return; }
-  state.budget -= fm.cost;
-  let raised = 0;
-  Object.keys(fm.reach).forEach(reachKey=>{
-    const reach = fm.reach[reachKey];
-    const donor = DONORS.find(d => d.id === reachKey);
-    if(donor){
-      const prob = donor.baseProb * donor.responsiveness * (state.reputation / 100) * reach;
-      if(Math.random() < prob){
-        const gift = Math.round(donor.maxGift * (0.4 + Math.random() * 0.6));
-        raised += gift;
-      }
-    }
-    if(reachKey === 'smallDonor'){
-      const donorSmall = DONORS.find(d => d.id === 'smallDonor');
-      const count = Math.round(10 * (state.reputation / 100) * reach);
-      for(let i=0;i<count;i++){
-        if(Math.random() < donorSmall.baseProb * donorSmall.responsiveness){
-          raised += Math.round(2 + Math.random() * 18);
-        }
-      }
-    }
-    if(reachKey === 'grant'){
-      const grantProb = clamp(0.5 + (state.reputation - 50) / 200, 0.1, 0.95);
-      if(Math.random() < grantProb) raised += fm.baseRaise;
-    }
-  });
-  if(key === 'crowdfunding') raised = Math.round(raised * 0.92);
-  state.partyFunds += raised;
-  appendLog(`${fm.name} raised ₹${raised} added to Party Funds.`);
-  recordEvent({type:'fund', turn: state.turn, name: fm.name, amount: raised});
-  updateKPIs(); pushHistory(); updateTable();
-}
-
-function simulateDirectDonation(donorId){
-  const donor = DONORS.find(d => d.id === donorId);
-  if(!donor) return;
-  const prob = donor.baseProb * donor.responsiveness * (state.reputation / 100);
-  if(Math.random() < prob){
-    const gift = Math.round(donor.maxGift * (0.4 + Math.random() * 0.6));
-    state.partyFunds += gift;
-    appendLog(`${donor.name} donated ₹${gift} to Party Funds.`);
-    recordEvent({type:'donation', turn: state.turn, name: donor.name, amount: gift});
-  } else {
-    appendLog(`${donor.name} did not donate.`);
-  }
-  updateKPIs(); pushHistory(); updateTable();
-}
-
-/* expose for inline onclick */
-window.simulateDirectDonation = simulateDirectDonation;
-
-/* ---------- Party transfers & audits ---------- */
-function requestPartyMatch(){
-  const matchRate = 0.5 * (state.reputation / 100);
-  const requested = Math.round(state.budget * 0.2);
-  const available = state.partyFunds;
-  const match = Math.min(Math.round(requested * matchRate), available);
-  if(match <= 0){ appendLog('Party declined to match funds. Improve reputation.'); return; }
-  state.partyFunds -= match;
-  state.budget += match;
-  appendLog(`Party matched ₹${match} to campaign budget.`);
-  recordEvent({type:'match', turn: state.turn, amount: match});
-  updateKPIs(); pushHistory(); updateChart(); updateTable();
-}
-
-function transferFromParty(transparency){
-  const amount = Math.min(Math.round(state.partyFunds * 0.5), 400);
-  if(amount <= 0){ appendLog('No party funds available to transfer.'); return; }
-  if(transparency === 'transparent'){
-    state.partyFunds -= amount;
-    state.budget += amount;
-    appendLog(`Transparent transfer: ₹${amount} moved to campaign.`);
-    recordEvent({type:'transfer', turn: state.turn, amount, transparency});
-  } else {
-    state.partyFunds -= amount;
-    state.budget += amount;
-    state.corruptionScore += 0.08;
-    state.reputation = clamp(state.reputation - 6, 0, 100);
-    appendLog(`Opaque transfer: ₹${amount} moved quickly. Corruption increased.`);
-    recordEvent({type:'transfer', turn: state.turn, amount, transparency});
-    checkForAudit();
-  }
-  updateKPIs(); pushHistory(); updateChart(); updateTable();
-}
-
-function checkForAudit(){
-  const base = 0.002; // small base chance
-  const prob = base + state.corruptionScore * 0.18 - (state.reputation / 100) * 0.01;
-  if(Math.random() < prob){
-    const frozen = Math.round(state.partyFunds * 0.5);
-    state.partyFunds -= frozen;
-    state.reputation = clamp(state.reputation - 12, 0, 100);
-    appendLog(`Audit: ₹${frozen} frozen from Party Funds. Reputation reduced.`);
-    recordEvent({type:'audit', turn: state.turn, amount: frozen});
-    updateKPIs(); pushHistory(); updateTable();
-  }
-}
-
-/* ---------- Turn progression ---------- */
-function endTurn(){
-  state.turn += 1;
-  refs.turnBadge.textContent = `Turn ${state.turn}`;
-  // natural drift
-  state.voterGroups.forEach(g=>{
-    const drift = (Math.random() * 0.02) * (Math.random() > 0.85 ? -1 : 1);
-    g.sentiment = clamp(g.sentiment - Math.abs(drift), 0, 1);
-    const el = document.getElementById(`sent-${g.id}`);
-    if(el) el.textContent = `${(g.sentiment*100).toFixed(0)}%`;
-  });
-  // passive donations
-  const passive = Math.round((state.reputation / 100) * 8);
-  state.partyFunds += passive;
-  appendLog(`Turn ${state.turn} ended. Passive donations ₹${passive} added to Party Funds.`);
-  recordEvent({type:'passive', turn: state.turn, amount: passive});
-  updateKPIs(); renderVoters(); pushHistory(); updateChart(); updateTable();
-}
-
-/* ---------- History, events, table ---------- */
-function pushHistory(){
-  state.history.push({
+// Record a turn snapshot (after end-of-turn changes)
+function recordTurnSnapshot(keyEventName = '') {
+  const snapshot = {
     turn: state.turn,
-    budget: state.budget,
-    partyFunds: state.partyFunds,
-    rep: state.reputation,
-    groups: state.voterGroups.map(g=>({id:g.id,sentiment:g.sentiment}))
-  });
+    budget: Math.round(state.budget),
+    partyFunds: Math.round(state.partyFunds),
+    rep: Math.round(state.reputation),
+    groupSentiments: state.voterGroups.map(g => ({ id: g.id, sentiment: g.sentiment })),
+    keyEventName: keyEventName
+  };
+  state.turnSnapshots.push(snapshot);
+  updateTable();
 }
 
-function recordEvent(ev){
-  state.events.push(ev);
-}
-
-function updateTable(){
+// Update the turn summary table
+function updateTable() {
   refs.dataTable.innerHTML = '';
-  state.history.forEach(h=>{
-    const ev = state.events.find(e=>e.turn===h.turn) || {};
+  state.turnSnapshots.forEach(s => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${h.turn}</td><td>₹${h.budget}</td><td>₹${h.partyFunds}</td><td>${h.rep}</td><td>${ev.name || '-'}</td>`;
+    tr.innerHTML = `<td>${s.turn}</td><td>₹${s.budget}</td><td>₹${s.partyFunds}</td><td>${s.rep}</td><td>${s.keyEventName || '-'}</td>`;
     refs.dataTable.appendChild(tr);
   });
 }
 
-/* ---------- Charting ---------- */
-let chart = null;
-function resetChart(){
-  const labels = [];
-  const datasets = state.voterGroups.map(g=>({ label: g.name, data: [], borderColor: randomColorFor(g.id), borderWidth: 2, fill:false, tension:0.2 }));
-  const ctx = refs.voteChart.getContext('2d');
-  if(chart) chart.destroy();
+// --- CHART: rebuild from full history every time (ensures correctness)
+function rebuildChart() {
+  const labels = state.turnSnapshots.map(s => `T${s.turn}`);
+  const groups = state.voterGroups; // names and order
+  const baseDatasets = groups.map(g => ({
+    label: g.name,
+    data: [],
+    borderColor: randomColorFor(g.id),
+    borderWidth: 2,
+    fill: false,
+    tension: 0.2
+  }));
+  
+  // Fill data for each group per snapshot
+  state.turnSnapshots.forEach(snapshot => {
+    const sentMap = new Map(snapshot.groupSentiments.map(g => [g.id, g.sentiment]));
+    groups.forEach(g => {
+      const sentiment = sentMap.get(g.id) || 0.5;
+      const weighted = state.turnSnapshots.length ? computeWeightedShareForSnapshot(snapshot, g) : 0;
+      baseDatasets.find(ds => ds.label === g.name).data.push(weighted);
+    });
+  });
+
+  let finalDatasets = [...baseDatasets];
+  
+  // Overlay: Average sentiment (if toggled)
+  if (refs.toggleSent.checked) {
+    const avgSentData = state.turnSnapshots.map(s => {
+      const avg = s.groupSentiments.reduce((sum, g) => sum + g.sentiment, 0) / s.groupSentiments.length;
+      return Math.round(avg * 100);
+    });
+    finalDatasets.push({
+      label: 'Avg Sentiment (%)',
+      data: avgSentData,
+      borderColor: '#16a34a',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.2,
+      yAxisID: 'y'
+    });
+  }
+  
+  // Overlay: Party Funds (scaled to fit 0-100)
+  if (refs.toggleFunds.checked) {
+    const fundsData = state.turnSnapshots.map(s => Math.min(100, s.partyFunds / 10));
+    finalDatasets.push({
+      label: 'Party Funds (scaled)',
+      data: fundsData,
+      borderColor: '#f97316',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.2,
+      yAxisID: 'y'
+    });
+  }
+  
+  if (chart) chart.destroy();
   chart = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets },
-    options: { responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true,max:100}} }
+    data: { labels, datasets: finalDatasets },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: 'Share / Value' } } }
+    }
   });
 }
 
-function updateChart(){
-  const label = `T${state.turn}`;
-  chart.data.labels.push(label);
-  const breakdown = computeVoteBreakdown();
-  chart.data.datasets.forEach(ds=>{
-    const b = breakdown.find(x=>x.name===ds.label);
-    ds.data.push(b ? b.share : 0);
-  });
-
-  // overlays
-  // remove overlays if present
-  chart.data.datasets = chart.data.datasets.slice(0, state.voterGroups.length);
-
-  if(refs.toggleSent.checked){
-    const avgSent = Math.round(state.voterGroups.reduce((a,g)=>a+g.sentiment,0)/state.voterGroups.length*100);
-    chart.data.datasets.push({ label:'Avg Sentiment', data: Array(chart.data.labels.length-1).fill(null).concat([avgSent]), borderColor:'#16a34a', borderWidth:2, fill:false, tension:0.2 });
-  }
-  if(refs.toggleFunds.checked){
-    const funds = Math.round(state.partyFunds/10); // scaled for chart
-    chart.data.datasets.push({ label:'Party Funds (scaled)', data: Array(chart.data.labels.length-1).fill(null).concat([funds]), borderColor:'#f97316', borderWidth:2, fill:false, tension:0.2 });
-  }
-
-  chart.update();
+function computeWeightedShareForSnapshot(snapshot, group) {
+  const totalWeighted = snapshot.groupSentiments.reduce((sum, g) => {
+    const arche = archetypesBase.find(a => a.id === g.id);
+    return sum + g.sentiment * (arche ? arche.size : 0);
+  }, 0);
+  if (totalWeighted === 0) return 0;
+  const arche = archetypesBase.find(a => a.id === group.id);
+  const groupSent = snapshot.groupSentiments.find(g => g.id === group.id)?.sentiment || 0;
+  return (groupSent * (arche ? arche.size : 0) / totalWeighted) * 100;
 }
 
-function computeVoteBreakdown(){
-  const weighted = state.voterGroups.reduce((acc,g)=>acc + g.sentiment * g.size, 0);
-  return state.voterGroups.map(g=>{
-    const share = weighted > 0 ? (g.sentiment * g.size / weighted) * 100 : (g.size*100/state.voterGroups.length);
-    return { id:g.id, name:g.name, share };
-  });
-}
-
-/* ---------- Utilities ---------- */
-function randomColorFor(id){
+function randomColorFor(id) {
   const map = { youth:'#0b6efd', farmers:'#ef4444', fisher:'#06b6d4', women:'#a78bfa', seniors:'#f59e0b', business:'#10b981' };
   return map[id] || '#64748b';
 }
 
-/* ---------- Play controls ---------- */
-let playInterval = null;
-refs.playBtn.addEventListener('click', ()=>{
-  if(playInterval){ clearInterval(playInterval); playInterval = null; refs.playBtn.textContent = 'Play'; }
-  else { refs.playBtn.textContent = 'Pause'; playInterval = setInterval(()=> endTurn(), Number(refs.speed.value)); }
-});
-refs.stepForward.addEventListener('click', ()=> endTurn());
-refs.stepBack.addEventListener('click', ()=> {
-  if(state.history.length <= 1) return;
-  // revert last history and event
-  state.history.pop();
-  state.events.pop();
-  const last = state.history[state.history.length-1];
-  state.turn = last.turn;
-  state.budget = last.budget;
-  state.partyFunds = last.partyFunds;
-  state.reputation = last.rep;
-  state.voterGroups = last.groups.map(g => {
-    const arche = archetypesBase.find(a=>a.id===g.id);
-    return { ...arche, sentiment: g.sentiment, responsiveness: 0.7 };
-  });
-  renderVoters(); updateKPIs(); resetChart();
-  // rebuild chart from history
-  state.history.forEach((h,i)=>{
-    chart.data.labels.push('T'+h.turn);
-    const breakdown = computeVoteBreakdownAtHistory(i);
-    chart.data.datasets.forEach((ds, idx)=> ds.data.push(breakdown[idx] ? breakdown[idx].share : 0));
-  });
-  chart.update();
-  updateTable();
-});
-refs.resetBtn.addEventListener('click', ()=> initSimulation());
-
-function computeVoteBreakdownAtHistory(index){
-  const groups = state.history[index].groups;
-  const weighted = groups.reduce((acc,g)=>acc + g.sentiment * (archetypesBase.find(a=>a.id===g.id).size), 0);
-  return groups.map(g=>({ id:g.id, name: archetypesBase.find(a=>a.id===g.id).name, share: weighted>0 ? (g.sentiment * archetypesBase.find(a=>a.id===g.id).size / weighted)*100 : 0 }));
+// Update everything after state changes
+function refreshUI() {
+  updateKPIs();
+  renderVoters();
+  updateSentimentDisplays();
+  rebuildChart();
 }
 
-/* ---------- Events & history ---------- */
-function recordEvent(ev){ state.events.push(ev); }
-function pushHistory(){ state.history.push({ turn: state.turn, budget: state.budget, partyFunds: state.partyFunds, rep: state.reputation, groups: state.voterGroups.map(g=>({id:g.id,sentiment:g.sentiment})) }); }
-
-/* ---------- Table update ---------- */
-function updateTable(){
-  refs.dataTable.innerHTML = '';
-  state.history.forEach(h=>{
-    const ev = state.events.find(e=>e.turn===h.turn) || {};
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${h.turn}</td><td>₹${h.budget}</td><td>₹${h.partyFunds}</td><td>${h.rep}</td><td>${ev.name || '-'}</td>`;
-    refs.dataTable.appendChild(tr);
+// Apply campaign move (cost fixed, no broken multiplier)
+function applyMove(moveKey) {
+  const move = MOVES[moveKey];
+  if (move.cost > state.budget) {
+    appendLog(`Not enough campaign budget for ${move.name}. Need ₹${move.cost}.`);
+    return;
+  }
+  state.budget -= move.cost;
+  state.reputation = clamp(state.reputation + Math.round(move.cost / 50), 0, 100);
+  Object.keys(move.effects).forEach(gid => {
+    const group = state.voterGroups.find(x => x.id === gid);
+    if (group) {
+      const delta = move.effects[gid] * group.responsiveness;
+      group.sentiment = clamp(group.sentiment + delta, 0, 1);
+    }
   });
+  appendLog(`Applied ${move.name} (₹${move.cost}). Reputation +${Math.round(move.cost/50)}.`);
+  refreshUI();
 }
 
-/* ---------- KPIs ---------- */
-function updateKPIs(){
-  refs.kBudget.textContent = `₹${state.budget}`;
-  refs.kParty.textContent = `₹${state.partyFunds}`;
-  refs.kRep.textContent = `${state.reputation}`;
+// Fundraising move
+function runFundMove(key) {
+  const fm = FUND_MOVES[key];
+  if (fm.cost > state.budget) {
+    appendLog(`Not enough campaign budget to run ${fm.name}. Need ₹${fm.cost}.`);
+    return;
+  }
+  state.budget -= fm.cost;
+  let raised = 0;
+  Object.entries(fm.reach).forEach(([reachKey, multiplier]) => {
+    const donor = DONORS.find(d => d.id === reachKey);
+    if (donor) {
+      const prob = donor.baseProb * donor.responsiveness * (state.reputation / 100) * multiplier;
+      if (Math.random() < prob) {
+        const gift = Math.round(donor.maxGift * (0.4 + Math.random() * 0.6));
+        raised += gift;
+      }
+    }
+    if (reachKey === 'smallDonor') {
+      const donorSmall = DONORS.find(d => d.id === 'smallDonor');
+      const count = Math.round(10 * (state.reputation / 100) * multiplier);
+      for (let i = 0; i < count; i++) {
+        if (Math.random() < donorSmall.baseProb * donorSmall.responsiveness) {
+          raised += Math.round(2 + Math.random() * 18);
+        }
+      }
+    }
+    if (reachKey === 'grant') {
+      const grantProb = clamp(0.5 + (state.reputation - 50) / 200, 0.1, 0.95);
+      if (Math.random() < grantProb) raised += fm.baseRaise;
+    }
+  });
+  if (key === 'crowdfunding') raised = Math.round(raised * 0.92);
+  state.partyFunds += raised;
+  appendLog(`${fm.name} raised ₹${raised} → Party Funds.`);
+  refreshUI();
 }
 
-/* ---------- Init ---------- */
-function initSimulation(){
-  refs.log.innerHTML = '';
+// Direct donation
+function simulateDirectDonation(donorId) {
+  const donor = DONORS.find(d => d.id === donorId);
+  if (!donor) return;
+  const prob = donor.baseProb * donor.responsiveness * (state.reputation / 100);
+  if (Math.random() < prob) {
+    const gift = Math.round(donor.maxGift * (0.4 + Math.random() * 0.6));
+    state.partyFunds += gift;
+    appendLog(`${donor.name} donated ₹${gift}.`);
+  } else {
+    appendLog(`${donor.name} declined.`);
+  }
+  refreshUI();
+}
+window.simulateDirectDonation = simulateDirectDonation;
+
+// Party match
+function requestPartyMatch() {
+  const matchRate = 0.5 * (state.reputation / 100);
+  const requested = Math.round(state.budget * 0.2);
+  const available = state.partyFunds;
+  const match = Math.min(Math.round(requested * matchRate), available);
+  if (match <= 0) { appendLog('Party declined: low reputation or insufficient funds.'); return; }
+  state.partyFunds -= match;
+  state.budget += match;
+  appendLog(`Party matched ₹${match} → campaign budget.`);
+  refreshUI();
+}
+
+// Transfer from party (transparent or opaque)
+function transferFromParty(transparent) {
+  const amount = Math.min(Math.round(state.partyFunds * 0.5), 400);
+  if (amount <= 0) { appendLog('No party funds to transfer.'); return; }
+  state.partyFunds -= amount;
+  state.budget += amount;
+  if (transparent) {
+    appendLog(`Transparent transfer: ₹${amount} moved to campaign.`);
+  } else {
+    state.corruptionScore = clamp(state.corruptionScore + 0.08, 0, 1);
+    state.reputation = clamp(state.reputation - 6, 0, 100);
+    appendLog(`Opaque transfer: ₹${amount} moved, reputation -6, corruption increased.`);
+    checkForAudit();
+  }
+  refreshUI();
+}
+
+function checkForAudit() {
+  // clamp corruptionScore [0,1] already done, prob formula safe
+  let prob = 0.002 + state.corruptionScore * 0.18 - (state.reputation / 100) * 0.01;
+  prob = clamp(prob, 0, 0.5);  // never over 50% chance per trigger
+  if (Math.random() < prob) {
+    const frozen = Math.round(state.partyFunds * 0.5);
+    state.partyFunds -= frozen;
+    state.reputation = clamp(state.reputation - 12, 0, 100);
+    appendLog(`AUDIT: ₹${frozen} frozen from Party Funds. Reputation -12.`);
+    refreshUI();
+  }
+}
+
+// End turn: apply drift, passive donations, snapshot
+function endTurn() {
+  // 1) Natural drift
+  state.voterGroups.forEach(g => {
+    const drift = (Math.random() * 0.02) * (Math.random() > 0.85 ? -1 : 1);
+    g.sentiment = clamp(g.sentiment + drift, 0, 1);
+  });
+  // 2) Passive donations to party funds
+  const passive = Math.round((state.reputation / 100) * 8);
+  state.partyFunds += passive;
+  // 3) Increment turn
+  state.turn++;
+  refs.turnBadge.textContent = `Turn ${state.turn}`;
+  appendLog(`Turn ${state.turn} ended. Passive donations +₹${passive}.`);
+  // 4) Record snapshot with key event "End turn"
+  recordTurnSnapshot(`End turn (passive ₹${passive})`);
+  refreshUI();
+}
+
+// Step back: revert to previous snapshot
+function stepBack() {
+  if (state.turnSnapshots.length <= 1) return;
+  // remove current snapshot, then load previous
+  state.turnSnapshots.pop();
+  const prev = state.turnSnapshots[state.turnSnapshots.length - 1];
+  state.turn = prev.turn;
+  state.budget = prev.budget;
+  state.partyFunds = prev.partyFunds;
+  state.reputation = prev.rep;
+  // restore group sentiments
+  state.voterGroups.forEach(g => {
+    const prevSent = prev.groupSentiments.find(ps => ps.id === g.id);
+    if (prevSent) g.sentiment = prevSent.sentiment;
+  });
+  refs.turnBadge.textContent = `Turn ${state.turn}`;
+  refreshUI();
+  appendLog(`Step back to turn ${state.turn}`);
+}
+
+// Reset simulation
+function resetSimulation() {
+  if (playInterval) { clearInterval(playInterval); playInterval = null; refs.playBtn.textContent = 'Play'; }
   state.voterGroups = computeInitialVoterGroups();
   state.budget = indicators.povertyRate > 0.15 ? 450 : 520;
   state.partyFunds = 400;
   state.reputation = 50;
   state.corruptionScore = 0;
   state.turn = 0;
-  state.history = [];
-  state.events = [];
-  renderIndicatorPanel();
-  renderMoves();
-  renderDonors();
-  renderVoters();
-  updateKPIs();
-  pushHistory();
-  resetChart();
-  updateChart();
-  updateTable();
-  appendLog('Simulation initialized and ready.');
+  state.turnSnapshots = [];
+  recordTurnSnapshot('Initialization');
+  refreshUI();
+  appendLog('Simulation reset.');
 }
 
-/* ---------- Start ---------- */
-initSimulation();
+// Play/pause with dynamic speed
+function startStopPlay() {
+  if (playInterval) {
+    clearInterval(playInterval);
+    playInterval = null;
+    refs.playBtn.textContent = 'Play';
+  } else {
+    const speedVal = parseInt(refs.speed.value, 10);
+    playInterval = setInterval(() => endTurn(), speedVal);
+    refs.playBtn.textContent = 'Pause';
+  }
+}
+function updatePlayInterval() {
+  if (playInterval) {
+    clearInterval(playInterval);
+    const speedVal = parseInt(refs.speed.value, 10);
+    playInterval = setInterval(() => endTurn(), speedVal);
+  }
+}
 
-/* expose some functions for console/testing */
-window.requestPartyMatch = requestPartyMatch;
-window.transferFromParty = transferFromParty;
-window.applyMove = applyMove;
-window.runFundMove = runFundMove;
+// Event bindings
+function bindEvents() {
+  refs.playBtn.addEventListener('click', startStopPlay);
+  refs.stepForward.addEventListener('click', endTurn);
+  refs.stepBack.addEventListener('click', stepBack);
+  refs.resetBtn.addEventListener('click', resetSimulation);
+  refs.speed.addEventListener('input', updatePlayInterval);
+  refs.toggleSent.addEventListener('change', () => rebuildChart());
+  refs.toggleFunds.addEventListener('change', () => rebuildChart());
+  refs.matchPartyBtn.addEventListener('click', requestPartyMatch);
+  refs.transferTransparentBtn.addEventListener('click', () => transferFromParty(true));
+  refs.transferOpaqueBtn.addEventListener('click', () => transferFromParty(false));
+  
+  // Populate move buttons
+  const movesContainer = refs.moves;
+  Object.keys(MOVES).forEach(k => {
+    const m = MOVES[k];
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.textContent = `${m.name} — ₹${m.cost}`;
+    btn.onclick = () => applyMove(k);
+    movesContainer.appendChild(btn);
+  });
+  
+  const fundContainer = refs.fundMoves;
+  Object.keys(FUND_MOVES).forEach(k => {
+    const fm = FUND_MOVES[k];
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.textContent = `${fm.name} — ₹${fm.cost}`;
+    btn.onclick = () => runFundMove(k);
+    fundContainer.appendChild(btn);
+  });
+  
+  const donorContainer = refs.donorList;
+  DONORS.forEach(d => {
+    const div = document.createElement('div');
+    div.className = 'donor';
+    div.innerHTML = `<div><strong>${d.name}</strong><div class="muted">Max ₹${d.maxGift}</div></div>
+                     <div><button class="btn" onclick="simulateDirectDonation('${d.id}')">Solicit</button></div>`;
+    donorContainer.appendChild(div);
+  });
+}
+
+// Initialization
+function init() {
+  renderIndicatorPanel();
+  bindEvents();
+  resetSimulation();  // sets initial snapshot and renders
+}
+init();
 </script>
 </body>
 </html>
