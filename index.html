@@ -1,25 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Future MLA — Pro Gaming UI | Horizontal Sentiment | Action Log</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Future MLA – 90 Days to Election | Enhanced Campaign Sim</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;600;700;800&family=Orbitron:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
       font-family: 'Inter', system-ui, sans-serif;
       padding: 20px;
       color: #eef2ff;
+      position: relative;
     }
-    /* grid overlay */
     body::before {
       content: "";
       position: fixed;
@@ -31,13 +27,7 @@
       pointer-events: none;
       z-index: 0;
     }
-    .game-container {
-      max-width: 1600px;
-      margin: 0 auto;
-      position: relative;
-      z-index: 2;
-    }
-    /* header */
+    .game-container { max-width: 1600px; margin: 0 auto; position: relative; z-index: 2; }
     .game-header {
       background: rgba(12,20,35,0.65);
       backdrop-filter: blur(12px);
@@ -50,14 +40,9 @@
       align-items: center;
       flex-wrap: wrap;
     }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
+    .brand { display: flex; align-items: center; gap: 16px; }
     .logo {
-      width: 52px;
-      height: 52px;
+      width: 52px; height: 52px;
       background: linear-gradient(145deg, #0ef, #0066cc);
       border-radius: 18px;
       display: flex;
@@ -76,25 +61,19 @@
       color: transparent;
       font-family: 'Orbitron', monospace;
     }
-    .constituency-badge {
+    .district-selector {
       background: rgba(0,255,255,0.15);
       padding: 6px 16px;
       border-radius: 60px;
       border: 1px solid #0ef;
       font-size: 0.85rem;
     }
-    /* main grid: 3 columns? but we'll do left main + right tips */
     .dashboard {
       display: grid;
-      grid-template-columns: 1fr 280px;
+      grid-template-columns: 1fr 320px;
       gap: 24px;
     }
-    .main-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    /* horizontal voter sentiment */
+    .main-panel { display: flex; flex-direction: column; gap: 20px; }
     .voter-horizontal {
       background: rgba(8,18,28,0.7);
       backdrop-filter: blur(10px);
@@ -115,12 +94,7 @@
       border-left: 3px solid #0ef;
       padding-left: 12px;
     }
-    .voter-flex {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: space-between;
-    }
+    .voter-flex { display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
     .voter-card {
       flex: 1;
       min-width: 100px;
@@ -129,15 +103,7 @@
       padding: 10px 8px;
       text-align: center;
       border: 1px solid #2c4b6e;
-      transition: 0.1s;
-    }
-    .voter-name {
-      font-weight: 700;
-      font-size: 0.85rem;
-    }
-    .voter-size {
-      font-size: 0.7rem;
-      color: #8a9bb5;
+      transition: all 0.2s ease;
     }
     .sentiment-value {
       font-size: 1.5rem;
@@ -145,13 +111,10 @@
       font-family: 'Orbitron', monospace;
       color: #0ef;
       margin-top: 6px;
+      transition: transform 0.1s;
     }
-    /* two column inside main panel: left controls / right stats */
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1.2fr;
-      gap: 20px;
-    }
+    .sentiment-flash { transform: scale(1.1); text-shadow: 0 0 8px #0ef; }
+    .two-col { display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; }
     .card-glow {
       background: rgba(8,18,28,0.7);
       backdrop-filter: blur(10px);
@@ -159,12 +122,7 @@
       border: 1px solid rgba(0,255,255,0.2);
       padding: 18px 20px;
     }
-    .move-grid, .fund-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
-    }
+    .move-grid, .fund-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
     .btn-neon {
       background: rgba(0,30,45,0.7);
       border: 1px solid #0ef;
@@ -175,19 +133,30 @@
       font-size: 0.75rem;
       cursor: pointer;
       transition: 0.1s;
+      position: relative;
     }
-    .btn-neon:hover {
-      background: #0ef;
-      color: #010a14;
-      box-shadow: 0 0 12px #0ef;
+    .btn-neon:hover { background: #0ef; color: #010a14; box-shadow: 0 0 12px #0ef; }
+    .tooltip-text {
+      visibility: hidden;
+      background: #0a0f1e;
+      color: #0ef;
+      text-align: center;
+      border-radius: 8px;
+      padding: 4px 8px;
+      position: absolute;
+      z-index: 10;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-size: 0.7rem;
+      border: 1px solid #0ef;
+      opacity: 0;
+      transition: 0.1s;
+      pointer-events: none;
     }
-    .donor-list {
-      max-height: 200px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+    .btn-neon:hover .tooltip-text { visibility: visible; opacity: 1; }
+    .donor-list { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
     .donor-item {
       background: rgba(0,20,30,0.5);
       border-radius: 16px;
@@ -197,11 +166,7 @@
       align-items: center;
       font-size: 0.8rem;
     }
-    .kpi-row {
-      display: flex;
-      gap: 10px;
-      margin: 15px 0;
-    }
+    .kpi-row { display: flex; gap: 10px; margin: 15px 0; }
     .kpi-tile {
       flex: 1;
       background: #00000055;
@@ -210,79 +175,72 @@
       text-align: center;
       border: 1px solid #0ef33;
     }
-    .kpi-value {
-      font-size: 24px;
-      font-weight: 800;
-      font-family: 'Orbitron', monospace;
-    }
-    /* event log - visible without scroll inside (show last messages, auto-scroll but container has max-height) */
-    .event-log {
+    .kpi-value { font-size: 24px; font-weight: 800; font-family: 'Orbitron', monospace; }
+    .event-log-panel {
       background: #03070ecc;
       border-radius: 20px;
       padding: 12px;
-      height: auto;
-      max-height: 200px;
+      height: 400px;
       overflow-y: auto;
       font-family: monospace;
       font-size: 12px;
       margin-top: 12px;
     }
-    .compact-chart canvas {
-      height: 160px !important;
-      width: 100%;
+    .compact-chart canvas { height: 160px !important; width: 100%; }
+    .floating-tip {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #0ef, #0066cc);
+      border: none;
+      color: #010a14;
+      font-size: 28px;
+      cursor: pointer;
+      box-shadow: 0 0 20px #0ef;
+      z-index: 1000;
+      transition: 0.2s;
     }
-    .tips-column {
-      background: rgba(8,18,28,0.7);
-      backdrop-filter: blur(10px);
-      border-radius: 28px;
-      border: 1px solid rgba(0,255,255,0.3);
-      padding: 20px;
-      height: fit-content;
+    .floating-tip:hover { transform: scale(1.1); }
+    .election-result {
+      background: #0a0f1ecc;
+      backdrop-filter: blur(16px);
+      padding: 12px 20px;
+      border-radius: 40px;
+      font-weight: bold;
+      margin-left: 12px;
     }
-    .tips-list {
-      list-style: none;
-      margin-top: 16px;
-    }
-    .tips-list li {
-      margin-bottom: 16px;
-      font-size: 0.85rem;
-      border-bottom: 1px dashed #2c4b6e;
-      padding-bottom: 8px;
-    }
-    table {
-      width: 100%;
-      font-size: 11px;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 6px 4px;
-      border-bottom: 1px solid #1e3a5f;
-    }
-    @media (max-width: 1100px) {
-      .dashboard { grid-template-columns: 1fr; }
-      .two-col { grid-template-columns: 1fr; }
-    }
+    table { width: 100%; font-size: 11px; border-collapse: collapse; }
+    th, td { padding: 6px 4px; border-bottom: 1px solid #1e3a5f; }
+    @media (max-width: 1100px) { .dashboard { grid-template-columns: 1fr; } .two-col { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
 <div class="game-container">
   <div class="game-header">
-    <div class="brand"><div class="logo"><i class="fas fa-chalkboard-user"></i></div><div><h1>FUTURE MLA</h1><div class="sub">◈ CAMPAIGN COMMANDER ◈ indicator-driven</div></div></div>
-    <div class="constituency-badge"><i class="fas fa-map-marker-alt"></i> MAYILADUTHURAI • TERM 2026</div>
+    <div class="brand"><div class="logo"><i class="fas fa-chalkboard-user"></i></div><div><h1>FUTURE MLA</h1><div class="sub">◈ 90 DAYS TO ELECTION ◈</div></div></div>
+    <div class="district-selector"><i class="fas fa-map-marker-alt"></i> 
+      <select id="districtSelect">
+        <option value="">Select District (future)</option>
+        <option>Chennai</option><option>Coimbatore</option><option>Madurai</option><option>Tiruchirappalli</option><option>Salem</option><option>Tirunelveli</option><option>Vellore</option><option>Erode</option><option>Thoothukkudi</option><option>Dindigul</option>
+      </select>
+    </div>
   </div>
 
   <div class="dashboard">
     <div class="main-panel">
       <!-- Horizontal Voter Sentiment -->
       <div class="voter-horizontal">
-        <div class="section-title"><i class="fas fa-users"></i> VOTER SENTIMENT (horizontal)</div>
+        <div class="section-title"><i class="fas fa-users"></i> VOTER SENTIMENT (live)</div>
         <div id="voterListHorizontal" class="voter-flex"></div>
       </div>
 
       <div class="two-col">
-        <!-- Left column: actions & donors -->
+        <!-- Left column: actions -->
         <div class="card-glow">
-          <div class="section-title"><i class="fas fa-fist-raised"></i> CAMPAIGN MOVES</div>
+          <div class="section-title"><i class="fas fa-fist-raised"></i> CAMPAIGN MOVES <span style="font-size:0.7rem;" id="microTargetStatus"></span></div>
           <div id="moves" class="move-grid"></div>
           <div class="section-title" style="margin-top:16px;"><i class="fas fa-hand-holding-usd"></i> FUNDRAISING</div>
           <div id="fundMoves" class="fund-grid"></div>
@@ -293,56 +251,46 @@
             <button id="matchPartyBtn" class="btn-neon"><i class="fas fa-handshake"></i> Request Match</button>
             <button id="transferTransparentBtn" class="btn-neon"><i class="fas fa-shield-alt"></i> Transparent</button>
             <button id="transferOpaqueBtn" class="btn-neon"><i class="fas fa-mask"></i> Opaque</button>
+            <button id="toggleMicroBtn" class="btn-neon"><i class="fas fa-bullseye"></i> Micro-target OFF</button>
           </div>
           <div class="kpi-row">
             <div class="kpi-tile"><div class="kpi-label">CAMPAIGN BUDGET</div><div id="k_budget" class="kpi-value">₹0</div></div>
             <div class="kpi-tile"><div class="kpi-label">PARTY FUNDS</div><div id="k_party" class="kpi-value">₹0</div></div>
             <div class="kpi-tile"><div class="kpi-label">REPUTATION</div><div id="k_rep" class="kpi-value">0</div></div>
           </div>
-          <div class="section-title"><i class="fas fa-scroll"></i> EVENT LOG (cause & effect)</div>
-          <div id="log" class="event-log"></div>
+          <div class="section-title"><i class="fas fa-chart-line"></i> OPPONENT (Rival)</div>
+          <div id="opponentStats" class="sub" style="margin-bottom:8px;">Reputation: -- | Vote share: --</div>
         </div>
 
-        <!-- Right column: analytics & turn table -->
+        <!-- Right column: analytics + event log -->
         <div class="card-glow">
-          <div style="display: flex; justify-content: space-between;"><div class="section-title" style="margin-bottom:0;"><i class="fas fa-chart-line"></i> ANALYTICS</div><div id="turnBadge" class="sub">TURN 0</div></div>
+          <div style="display: flex; justify-content: space-between;">
+            <div class="section-title" style="margin-bottom:0;"><i class="fas fa-chart-line"></i> ANALYTICS</div>
+            <div><span id="turnBadge" class="sub">DAY 0 / 90</span> <span id="electionResultBadge" class="election-result"></span></div>
+          </div>
           <div class="compact-chart"><canvas id="voteChart" height="160"></canvas></div>
           <div class="controls-bar" style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
             <button id="playBtn" class="btn-neon"><i class="fas fa-play"></i> Play</button>
-            <button id="stepBack" class="btn-neon"><i class="fas fa-step-backward"></i> Step ‹</button>
-            <button id="stepForward" class="btn-neon btn-primary-neon"><i class="fas fa-step-forward"></i> Step ›</button>
-            <input id="speed" type="range" min="200" max="1200" value="700" style="width:100px;">
+            <button id="stepForward" class="btn-neon btn-primary-neon"><i class="fas fa-step-forward"></i> Next Day</button>
             <button id="resetBtn" class="btn-neon"><i class="fas fa-sync-alt"></i> Reset</button>
+            <input id="speed" type="range" min="200" max="1200" value="700" style="width:100px;">
           </div>
           <div class="sub" style="display:flex; gap: 16px; margin: 8px 0;">
             <label><input id="toggleVote" type="checkbox" checked disabled> Vote base</label>
             <label><input id="toggleSent" type="checkbox"> Avg Sentiment</label>
             <label><input id="toggleFunds" type="checkbox"> Party Funds</label>
           </div>
-          <div class="section-title"><i class="fas fa-table-list"></i> TURN SUMMARY</div>
-          <div style="overflow-x: auto;"><table id="dataTable"><thead><tr><th>Turn</th><th>Budget</th><th>Party Funds</th><th>Rep</th><th>Event</th></tr></thead><tbody></tbody></table></div>
+          <div class="section-title"><i class="fas fa-scroll"></i> EVENT LOG (cause & effect)</div>
+          <div id="log" class="event-log-panel"></div>
         </div>
       </div>
     </div>
-
-    <!-- Tips Column with monetisation potential -->
-    <div class="tips-column">
-      <div class="section-title"><i class="fas fa-lightbulb"></i> PRO TIPS & MONETISATION</div>
-      <ul class="tips-list">
-        <li><i class="fas fa-chart-line"></i> <strong>Premium Analytics</strong> – Unlock real-time voter heatmaps, predictive AI. <span class="sub">(💰 one‑time $4.99)</span></li>
-        <li><i class="fas fa-crown"></i> <strong>Custom Scenarios</strong> – Adjust indicators, create your own constituency. <span class="sub">(🎟️ $2.99 / scenario)</span></li>
-        <li><i class="fas fa-ad"></i> <strong>Ad‑free experience</strong> – Remove all ads for uninterrupted strategy. <span class="sub">(💎 $1.99)</span></li>
-        <li><i class="fas fa-chalkboard"></i> <strong>Teacher’s Pack</strong> – Classroom worksheets, leaderboard integration. <span class="sub">(📚 $9.99 / year)</span></li>
-        <li><i class="fas fa-donate"></i> <strong>Donor Insight DLC</strong> – See hidden donor preferences, increase success rate. <span class="sub">(🔮 $3.49)</span></li>
-        <li><i class="fas fa-tachometer-alt"></i> <strong>Real‑time Multiplayer</strong> – Compete with other MLAs (coming soon). <span class="sub">(🚀 early access $14.99)</span></li>
-      </ul>
-      <div class="sub" style="margin-top: 16px; border-top: 1px solid #0ef33; padding-top: 12px;"><i class="fas fa-coins"></i> Monetisation potential: in‑app purchases, premium DLCs, educational licenses, and tournament passes.</div>
-    </div>
   </div>
 </div>
+<button class="floating-tip" id="tipButton"><i class="fas fa-lightbulb"></i></button>
 
 <script>
-/* ========== ORIGINAL SIMULATION CODE (index-3.html) – UNCHANGED ========== */
+/* ==================== ORIGINAL SIMULATION CORE (preserved & extended) ==================== */
 const indicators = {
   povertyRate: 0.18,
   schoolAttendance: 0.86,
@@ -350,15 +298,7 @@ const indicators = {
   fisherDependency: 0.12,
   agParticipation: 0.28
 };
-const MAPPING = {
-  baseline: 0.50,
-  povertyImpact: -0.6,
-  attendanceImpact: 0.8,
-  waterImpact: 0.5,
-  agImpact: -0.4,
-  clampMin: 0.05,
-  clampMax: 0.95
-};
+const MAPPING = { baseline: 0.50, povertyImpact: -0.6, attendanceImpact: 0.8, waterImpact: 0.5, agImpact: -0.4, clampMin: 0.05, clampMax: 0.95 };
 const archetypesBase = [
   { id: 'youth', name: 'Youth (18-30)', size: 0.22 },
   { id: 'farmers', name: 'Farmers', size: 0.20 },
@@ -368,11 +308,11 @@ const archetypesBase = [
   { id: 'business', name: 'Small Business', size: 0.12 }
 ];
 const MOVES = {
-  road:   { name: 'Repair Roads', cost: 80, effects: { farmers: 0.06, business: 0.04, seniors: 0.03 } },
-  school: { name: 'School Grants', cost: 60, effects: { youth: 0.07, women: 0.05 } },
-  water:  { name: 'Install Water Tanks', cost: 70, effects: { fisher: 0.08, women: 0.04 } },
-  rally:  { name: 'Hold Rally', cost: 30, effects: { youth: 0.04, seniors: 0.02 } },
-  ad:     { name: 'Local Ads', cost: 20, effects: { business: 0.03, youth: 0.02 } }
+  road:   { name: 'Repair Roads', cost: 80, effects: { farmers: 0.06, business: 0.04, seniors: 0.03 }, indicatorEffects: { povertyRate: -0.02 } },
+  school: { name: 'School Grants', cost: 60, effects: { youth: 0.07, women: 0.05 }, indicatorEffects: { schoolAttendance: 0.03 } },
+  water:  { name: 'Install Water Tanks', cost: 70, effects: { fisher: 0.08, women: 0.04 }, indicatorEffects: { waterAccess: 0.04 } },
+  rally:  { name: 'Hold Rally', cost: 30, effects: { youth: 0.04, seniors: 0.02 }, indicatorEffects: {} },
+  ad:     { name: 'Local Ads', cost: 20, effects: { business: 0.03, youth: 0.02 }, indicatorEffects: {} }
 };
 const FUND_MOVES = {
   fundraiser: { name: 'Host Fundraiser', cost: 20, baseRaise: 120, reach: { broker: 0.6, shopOwner: 0.6, contractor: 0.5, philanthropist: 0.4 } },
@@ -392,131 +332,103 @@ const DONORS = [
   { id: 'diaspora', name: 'Diaspora', baseProb: 0.25, maxGift: 80, responsiveness: 0.7 },
   { id: 'smallDonor', name: 'Small Donor', baseProb: 0.6, maxGift: 20, responsiveness: 0.6 }
 ];
+
+// Enhanced state
 let state = {
-  budget: indicators.povertyRate > 0.15 ? 450 : 520,
-  partyFunds: 400,
-  reputation: 50,
-  corruptionScore: 0,
-  turn: 0,
-  voterGroups: [],
-  history: [],
-  events: []
+  budget: 450, partyFunds: 400, reputation: 50, corruptionScore: 0, turn: 0, daysLeft: 90,
+  voterGroups: [], history: [], events: [], gameOver: false,
+  microTargetGroup: null,  // { id, name, extraCost }
+  opponent: { reputation: 45, partyFunds: 300, voteShareBaseline: 0.45 }
 };
-// DOM refs (original + new horizontal list)
+
+let chart = null, playInterval = null;
+let microTargetActive = false;
+
+// DOM refs
 const refs = {
-  indicators: document.getElementById('indicators'),
-  moves: document.getElementById('moves'),
-  fundMoves: document.getElementById('fundMoves'),
-  donorList: document.getElementById('donorList'),
-  voterListHorizontal: document.getElementById('voterListHorizontal'),
-  log: document.getElementById('log'),
-  kBudget: document.getElementById('k_budget'),
-  kParty: document.getElementById('k_party'),
-  kRep: document.getElementById('k_rep'),
-  voteChart: document.getElementById('voteChart'),
-  playBtn: document.getElementById('playBtn'),
-  stepBack: document.getElementById('stepBack'),
-  stepForward: document.getElementById('stepForward'),
-  speed: document.getElementById('speed'),
-  toggleVote: document.getElementById('toggleVote'),
-  toggleSent: document.getElementById('toggleSent'),
-  toggleFunds: document.getElementById('toggleFunds'),
-  dataTable: document.getElementById('dataTable').querySelector('tbody'),
-  turnBadge: document.getElementById('turnBadge'),
-  resetBtn: document.getElementById('resetBtn')
+  moves: document.getElementById('moves'), fundMoves: document.getElementById('fundMoves'),
+  donorList: document.getElementById('donorList'), voterListHorizontal: document.getElementById('voterListHorizontal'),
+  log: document.getElementById('log'), kBudget: document.getElementById('k_budget'), kParty: document.getElementById('k_party'),
+  kRep: document.getElementById('k_rep'), voteChart: document.getElementById('voteChart'), playBtn: document.getElementById('playBtn'),
+  stepForward: document.getElementById('stepForward'), speed: document.getElementById('speed'), toggleSent: document.getElementById('toggleSent'),
+  toggleFunds: document.getElementById('toggleFunds'), dataTable: document.getElementById('dataTable').querySelector('tbody'),
+  turnBadge: document.getElementById('turnBadge'), resetBtn: document.getElementById('resetBtn'), opponentStats: document.getElementById('opponentStats'),
+  electionResultBadge: document.getElementById('electionResultBadge'), toggleMicroBtn: document.getElementById('toggleMicroBtn'),
+  microTargetStatus: document.getElementById('microTargetStatus')
 };
+
 function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 function now(){ return new Date().toLocaleTimeString(); }
-function appendLog(text){ refs.log.innerHTML = `<div>[${now()}] ${text}</div>` + refs.log.innerHTML; }
-
+function appendLog(text){ refs.log.innerHTML = `<div style="animation: fadeIn 0.2s;">[${now()}] ${text}</div>` + refs.log.innerHTML; }
+function updateKPIs(){
+  refs.kBudget.textContent = `₹${Math.round(state.budget)}`;
+  refs.kParty.textContent = `₹${Math.round(state.partyFunds)}`;
+  refs.kRep.textContent = `${Math.round(state.reputation)}`;
+}
 function computeInitialVoterGroups(){
   return archetypesBase.map(a=>{
     let s = MAPPING.baseline;
     if(a.id === 'youth' || a.id === 'business') s += MAPPING.povertyImpact * indicators.povertyRate;
     if(a.id === 'youth' || a.id === 'women') s += MAPPING.attendanceImpact * (indicators.schoolAttendance - 0.75);
     if(a.id === 'fisher' || a.id === 'women') s += MAPPING.waterImpact * (indicators.waterAccess - 0.8);
-    if(a.id === 'farmers'){
-      s += MAPPING.agImpact * (indicators.agParticipation - 0.2);
-      s += MAPPING.povertyImpact * (indicators.povertyRate * 0.5);
-    }
+    if(a.id === 'farmers'){ s += MAPPING.agImpact * (indicators.agParticipation - 0.2); s += MAPPING.povertyImpact * (indicators.povertyRate * 0.5); }
     const sentiment = clamp(s, MAPPING.clampMin, MAPPING.clampMax);
-    const responsiveness = 0.5 + Math.random() * 0.6;
-    return { ...a, sentiment, responsiveness };
+    return { ...a, sentiment, responsiveness: 0.5 + Math.random() * 0.6 };
   });
 }
-function renderIndicatorPanel(){ /* not used but kept */ }
-function renderMoves(){
-  refs.moves.innerHTML = '';
-  Object.keys(MOVES).forEach(k=>{
-    const m = MOVES[k];
-    const btn = document.createElement('button');
-    btn.className = 'btn-neon';
-    btn.textContent = `${m.name} — ₹${m.cost}`;
-    btn.onclick = () => applyMove(k);
-    refs.moves.appendChild(btn);
-  });
-  refs.fundMoves.innerHTML = '';
-  Object.keys(FUND_MOVES).forEach(k=>{
-    const fm = FUND_MOVES[k];
-    const btn = document.createElement('button');
-    btn.className = 'btn-neon';
-    btn.textContent = `${fm.name} — cost ₹${fm.cost}`;
-    btn.onclick = () => runFundMove(k);
-    refs.fundMoves.appendChild(btn);
-  });
-}
-function renderDonors(){
-  refs.donorList.innerHTML = '';
-  DONORS.forEach(d=>{
-    const div = document.createElement('div');
-    div.className = 'donor-item';
-    div.innerHTML = `<div><strong>${d.name}</strong><div class="sub">Max ₹${d.maxGift}</div></div><div><button class="btn-neon" style="padding:4px 12px;" onclick="simulateDirectDonation('${d.id}')">Solicit</button></div>`;
-    refs.donorList.appendChild(div);
-  });
-}
-// horizontal voter render
 function renderVotersHorizontal(){
   refs.voterListHorizontal.innerHTML = '';
   state.voterGroups.forEach(g=>{
-    const card = document.createElement('div');
-    card.className = 'voter-card';
-    card.innerHTML = `<div class="voter-name">${g.name}</div>
-                      <div class="voter-size">size ${(g.size*100).toFixed(0)}%</div>
+    const card = document.createElement('div'); card.className = 'voter-card';
+    card.innerHTML = `<div class="voter-name">${g.name}</div><div class="voter-size">size ${(g.size*100).toFixed(0)}%</div>
                       <div class="sentiment-value" id="sent-${g.id}">${(g.sentiment*100).toFixed(0)}%</div>`;
     refs.voterListHorizontal.appendChild(card);
   });
 }
-function updateSentimentDisplays(){
-  state.voterGroups.forEach(g=>{
-    const el = document.getElementById(`sent-${g.id}`);
-    if(el) el.textContent = `${(g.sentiment*100).toFixed(0)}%`;
-  });
+function flashSentiment(id){
+  const el = document.getElementById(`sent-${id}`);
+  if(el) { el.classList.add('sentiment-flash'); setTimeout(()=> el.classList.remove('sentiment-flash'), 200); }
 }
-
-function applyMove(moveKey){
+function applyDynamicIndicators(effects){
+  if(effects.povertyRate) indicators.povertyRate = clamp(indicators.povertyRate + effects.povertyRate, 0.05, 0.6);
+  if(effects.schoolAttendance) indicators.schoolAttendance = clamp(indicators.schoolAttendance + effects.schoolAttendance, 0.5, 0.98);
+  if(effects.waterAccess) indicators.waterAccess = clamp(indicators.waterAccess + effects.waterAccess, 0.5, 0.98);
+}
+// core applyMove with micro-target & preview
+function applyMove(moveKey, skipLogPreview=false){
+  if(state.gameOver){ appendLog("Election is over. Reset to play again."); return false; }
   const move = MOVES[moveKey];
-  const spend = 50;
-  const totalCost = Math.max(move.cost, Math.round(move.cost * (spend/100)));
-  if(totalCost > state.budget){ appendLog(`Not enough campaign budget for ${move.name}. Need ₹${totalCost}.`); return; }
-  state.budget -= totalCost;
-  state.reputation = clamp(state.reputation + Math.round(totalCost / 50), 0, 100);
+  let cost = move.cost;
+  let extraCost = 0;
+  let targetGroup = null;
+  if(microTargetActive && state.microTargetGroup){
+    targetGroup = state.voterGroups.find(g=>g.id === state.microTargetGroup.id);
+    if(targetGroup){ extraCost = Math.round(cost * 0.5); cost += extraCost; }
+  }
+  if(cost > state.budget){ appendLog(`❌ Not enough budget for ${move.name}. Need ₹${cost}.`); return false; }
+  state.budget -= cost;
+  let repGain = Math.round(cost / 50);
+  state.reputation = clamp(state.reputation + repGain, 0, 100);
+  applyDynamicIndicators(move.indicatorEffects || {});
   let effectsStr = '';
   Object.keys(move.effects).forEach(gid=>{
-    const group = state.voterGroups.find(x => x.id === gid);
+    let group = state.voterGroups.find(x=>x.id === gid);
     if(!group) return;
-    const delta = move.effects[gid] * group.responsiveness;
+    let delta = move.effects[gid] * group.responsiveness;
+    if(targetGroup && targetGroup.id === gid) delta *= 2; // micro-target double effect
     group.sentiment = clamp(group.sentiment + delta, 0, 1);
+    flashSentiment(group.id);
     effectsStr += `${group.name} +${Math.round(delta*100)}% `;
-    const el = document.getElementById(`sent-${group.id}`);
-    if(el) el.textContent = `${(group.sentiment*100).toFixed(0)}%`;
   });
-  appendLog(`✅ ${move.name} (₹${totalCost}) → ${effectsStr} | Reputation +${Math.round(totalCost/50)}`);
-  recordEvent({type:'move', turn: state.turn, name: move.name, amount: totalCost});
-  updateKPIs(); pushHistory(); updateChart(); updateTable();
+  appendLog(`✅ ${move.name} (₹${cost}) → ${effectsStr} | Reputation +${repGain}${extraCost? ` (micro-target +${extraCost})` : ''}`);
+  if(move.indicatorEffects) appendLog(`📊 Indicators updated: poverty ${(indicators.povertyRate*100).toFixed(0)}% | school ${(indicators.schoolAttendance*100).toFixed(0)}% | water ${(indicators.waterAccess*100).toFixed(0)}%`);
+  updateKPIs(); pushHistory(); updateChart(); updateTable(); updateOpponentStats();
+  return true;
 }
 function runFundMove(key){
+  if(state.gameOver) return;
   const fm = FUND_MOVES[key];
-  if(fm.cost > state.budget){ appendLog(`Not enough campaign budget to run ${fm.name}. Need ₹${fm.cost}.`); return; }
+  if(fm.cost > state.budget){ appendLog(`Not enough budget for ${fm.name}.`); return; }
   state.budget -= fm.cost;
   let raised = 0;
   Object.keys(fm.reach).forEach(reachKey=>{
@@ -524,231 +436,249 @@ function runFundMove(key){
     const donor = DONORS.find(d => d.id === reachKey);
     if(donor){
       const prob = donor.baseProb * donor.responsiveness * (state.reputation / 100) * reach;
-      if(Math.random() < prob){
-        const gift = Math.round(donor.maxGift * (0.4 + Math.random() * 0.6));
-        raised += gift;
-      }
+      if(Math.random() < prob){ const gift = Math.round(donor.maxGift * (0.4 + Math.random() * 0.6)); raised += gift; }
     }
     if(reachKey === 'smallDonor'){
-      const donorSmall = DONORS.find(d => d.id === 'smallDonor');
-      const count = Math.round(10 * (state.reputation / 100) * reach);
-      for(let i=0;i<count;i++){
-        if(Math.random() < donorSmall.baseProb * donorSmall.responsiveness){
-          raised += Math.round(2 + Math.random() * 18);
-        }
-      }
+      const donorSmall = DONORS.find(d=>d.id==='smallDonor');
+      const count = Math.round(10 * (state.reputation/100) * reach);
+      for(let i=0;i<count;i++) if(Math.random() < donorSmall.baseProb * donorSmall.responsiveness) raised += Math.round(2+Math.random()*18);
     }
-    if(reachKey === 'grant'){
-      const grantProb = clamp(0.5 + (state.reputation - 50) / 200, 0.1, 0.95);
-      if(Math.random() < grantProb) raised += fm.baseRaise;
-    }
+    if(reachKey === 'grant'){ const grantProb = clamp(0.5+(state.reputation-50)/200,0.1,0.95); if(Math.random()<grantProb) raised += fm.baseRaise; }
   });
-  if(key === 'crowdfunding') raised = Math.round(raised * 0.92);
+  if(key === 'crowdfunding') raised = Math.round(raised*0.92);
   state.partyFunds += raised;
   appendLog(`💰 ${fm.name} raised ₹${raised} → Party Funds +₹${raised}`);
-  recordEvent({type:'fund', turn: state.turn, name: fm.name, amount: raised});
   updateKPIs(); pushHistory(); updateTable();
 }
 function simulateDirectDonation(donorId){
-  const donor = DONORS.find(d => d.id === donorId);
+  if(state.gameOver) return;
+  const donor = DONORS.find(d=>d.id===donorId);
   if(!donor) return;
-  const prob = donor.baseProb * donor.responsiveness * (state.reputation / 100);
-  if(Math.random() < prob){
-    const gift = Math.round(donor.maxGift * (0.4 + Math.random() * 0.6));
-    state.partyFunds += gift;
-    appendLog(`💎 ${donor.name} donated ₹${gift} to Party Funds.`);
-    recordEvent({type:'donation', turn: state.turn, name: donor.name, amount: gift});
-  } else {
-    appendLog(`❌ ${donor.name} did not donate.`);
-  }
+  const prob = donor.baseProb * donor.responsiveness * (state.reputation/100);
+  if(Math.random()<prob){ const gift = Math.round(donor.maxGift*(0.4+Math.random()*0.6)); state.partyFunds+=gift; appendLog(`💎 ${donor.name} donated ₹${gift}.`); }
+  else appendLog(`❌ ${donor.name} declined.`);
   updateKPIs(); pushHistory(); updateTable();
 }
 window.simulateDirectDonation = simulateDirectDonation;
 function requestPartyMatch(){
-  const matchRate = 0.5 * (state.reputation / 100);
-  const requested = Math.round(state.budget * 0.2);
-  const available = state.partyFunds;
-  const match = Math.min(Math.round(requested * matchRate), available);
-  if(match <= 0){ appendLog('Party declined to match funds. Improve reputation.'); return; }
-  state.partyFunds -= match;
-  state.budget += match;
+  if(state.gameOver) return;
+  const matchRate = 0.5*(state.reputation/100);
+  const requested = Math.round(state.budget*0.2);
+  const match = Math.min(Math.round(requested*matchRate), state.partyFunds);
+  if(match<=0){ appendLog('Party declined to match funds.'); return; }
+  state.partyFunds -= match; state.budget += match;
   appendLog(`🤝 Party matched ₹${match} → campaign budget +₹${match}`);
-  recordEvent({type:'match', turn: state.turn, amount: match});
   updateKPIs(); pushHistory(); updateChart(); updateTable();
 }
 function transferFromParty(transparency){
-  const amount = Math.min(Math.round(state.partyFunds * 0.5), 400);
-  if(amount <= 0){ appendLog('No party funds available to transfer.'); return; }
-  if(transparency === 'transparent'){
-    state.partyFunds -= amount;
-    state.budget += amount;
-    appendLog(`🔓 Transparent transfer: ₹${amount} moved to campaign.`);
-    recordEvent({type:'transfer', turn: state.turn, amount, transparency});
-  } else {
-    state.partyFunds -= amount;
-    state.budget += amount;
-    state.corruptionScore += 0.08;
-    state.reputation = clamp(state.reputation - 6, 0, 100);
-    appendLog(`⚠️ Opaque transfer: ₹${amount} moved. Corruption +0.08, Reputation -6.`);
-    recordEvent({type:'transfer', turn: state.turn, amount, transparency});
-    checkForAudit();
-  }
+  if(state.gameOver) return;
+  const amount = Math.min(Math.round(state.partyFunds*0.5), 400);
+  if(amount<=0){ appendLog('No party funds.'); return; }
+  state.partyFunds -= amount; state.budget += amount;
+  if(transparency === 'transparent'){ appendLog(`🔓 Transparent transfer: ₹${amount} moved.`); }
+  else { state.corruptionScore += 0.08; state.reputation = clamp(state.reputation-6,0,100); appendLog(`⚠️ Opaque transfer: ₹${amount}. Corruption +0.08, Rep -6.`); checkForAudit(); }
   updateKPIs(); pushHistory(); updateChart(); updateTable();
 }
 function checkForAudit(){
-  const base = 0.002;
-  const prob = base + state.corruptionScore * 0.18 - (state.reputation / 100) * 0.01;
-  if(Math.random() < prob){
-    const frozen = Math.round(state.partyFunds * 0.5);
-    state.partyFunds -= frozen;
-    state.reputation = clamp(state.reputation - 12, 0, 100);
-    appendLog(`🔍 AUDIT: ₹${frozen} frozen. Reputation -12.`);
-    recordEvent({type:'audit', turn: state.turn, amount: frozen});
-    updateKPIs(); pushHistory(); updateTable();
+  let prob = 0.002 + state.corruptionScore*0.18 - (state.reputation/100)*0.01;
+  if(Math.random() < prob){ const frozen = Math.round(state.partyFunds*0.5); state.partyFunds -= frozen; state.reputation = clamp(state.reputation-12,0,100); appendLog(`🔍 AUDIT: ₹${frozen} frozen. Rep -12.`); updateKPIs(); pushHistory(); updateTable(); }
+}
+// Opponent AI & Crisis
+function opponentMove(){
+  if(state.gameOver) return;
+  // rival gains reputation slowly
+  state.opponent.reputation = clamp(state.opponent.reputation + (Math.random()*2 - 0.5), 20, 80);
+  // rival spends money on random move
+  const moveKeys = Object.keys(MOVES);
+  const randomMove = MOVES[moveKeys[Math.floor(Math.random()*moveKeys.length)]];
+  const cost = randomMove.cost;
+  if(state.opponent.partyFunds >= cost){
+    state.opponent.partyFunds -= cost;
+    state.opponent.reputation = clamp(state.opponent.reputation + 1, 0, 100);
+    appendLog(`🤖 OPPONENT: ${randomMove.name} → their reputation +1`);
+  }
+  updateOpponentStats();
+}
+function updateOpponentStats(){
+  const oppVote = computeOpponentVoteShare();
+  refs.opponentStats.innerHTML = `Reputation: ${Math.round(state.opponent.reputation)} | Estimated vote: ${(oppVote*100).toFixed(1)}%`;
+}
+function computeOpponentVoteShare(){
+  // rival's vote share based on their reputation and random factor
+  let base = 0.3 + (state.opponent.reputation/100)*0.3;
+  return clamp(base, 0.2, 0.7);
+}
+function triggerRandomCrisis(){
+  const crises = [
+    { name: "Flood warning", effect: () => { state.reputation = clamp(state.reputation-5,0,100); appendLog("🌊 CRISIS: Flood warning! Reputation -5."); } },
+    { name: "Protest by farmers", effect: () => { state.voterGroups.find(g=>g.id==='farmers').sentiment = clamp(state.voterGroups.find(g=>g.id==='farmers').sentiment-0.1,0,1); appendLog("🚜 CRISIS: Farmer protest! Farmers sentiment -10%."); renderVotersHorizontal(); } },
+    { name: "Scandal in party", effect: () => { state.partyFunds = Math.max(0, state.partyFunds-150); appendLog("📰 CRISIS: Party scandal! Party Funds -₹150."); } },
+    { name: "Opponent endorsement", effect: () => { state.opponent.reputation = clamp(state.opponent.reputation+8,0,100); appendLog("⭐ CRISIS: Opponent gets temple endorsement! Their rep +8."); } }
+  ];
+  if(Math.random() < 0.25){ // 25% crisis per day
+    const crisis = crises[Math.floor(Math.random()*crises.length)];
+    crisis.effect();
+    updateKPIs(); updateOpponentStats(); updateChart();
   }
 }
+// End day (turn)
 function endTurn(){
-  state.turn += 1;
-  refs.turnBadge.textContent = `Turn ${state.turn}`;
+  if(state.gameOver) return;
+  if(state.daysLeft <= 0){
+    declareElectionResult();
+    return;
+  }
+  state.daysLeft--;
+  state.turn++;
+  refs.turnBadge.textContent = `DAY ${90-state.daysLeft} / 90`;
+  // Natural sentiment drift
   state.voterGroups.forEach(g=>{
-    const drift = (Math.random() * 0.02) * (Math.random() > 0.85 ? -1 : 1);
-    g.sentiment = clamp(g.sentiment - Math.abs(drift), 0, 1);
-    const el = document.getElementById(`sent-${g.id}`);
-    if(el) el.textContent = `${(g.sentiment*100).toFixed(0)}%`;
+    const drift = (Math.random()*0.02)*(Math.random()>0.85?-1:1);
+    g.sentiment = clamp(g.sentiment + drift, 0, 1);
+    flashSentiment(g.id);
   });
-  const passive = Math.round((state.reputation / 100) * 8);
+  const passive = Math.round((state.reputation/100)*8);
   state.partyFunds += passive;
-  appendLog(`🔄 Turn ${state.turn} ended. Passive donations ₹${passive} added to Party Funds.`);
-  recordEvent({type:'passive', turn: state.turn, amount: passive});
-  updateKPIs(); renderVotersHorizontal(); pushHistory(); updateChart(); updateTable();
+  appendLog(`🌙 Day ${90-state.daysLeft} ended. Passive income +₹${passive}.`);
+  opponentMove();
+  triggerRandomCrisis();
+  renderVotersHorizontal();
+  pushHistory(); updateChart(); updateTable(); updateKPIs(); updateOpponentStats();
+  if(state.daysLeft === 0) declareElectionResult();
+}
+function declareElectionResult(){
+  state.gameOver = true;
+  if(playInterval) clearInterval(playInterval);
+  const playerVoteShare = computePlayerVoteShare();
+  const opponentShare = computeOpponentVoteShare();
+  const won = playerVoteShare > opponentShare;
+  const resultText = won ? "🏆 YOU WIN THE ELECTION! 🏆" : "😞 YOU LOST. Better luck next term.";
+  refs.electionResultBadge.innerHTML = resultText;
+  appendLog(`📢 ELECTION RESULT: Your vote share ${(playerVoteShare*100).toFixed(1)}% vs Opponent ${(opponentShare*100).toFixed(1)}%. ${won ? "YOU WON!" : "YOU LOST."}`);
+  refs.playBtn.disabled = true; refs.stepForward.disabled = true;
+}
+function computePlayerVoteShare(){
+  const weighted = state.voterGroups.reduce((acc,g)=>acc + g.sentiment * g.size, 0);
+  return clamp(weighted, 0.2, 0.85);
 }
 function pushHistory(){
-  state.history.push({
-    turn: state.turn,
-    budget: state.budget,
-    partyFunds: state.partyFunds,
-    rep: state.reputation,
-    groups: state.voterGroups.map(g=>({id:g.id,sentiment:g.sentiment}))
-  });
+  state.history.push({ turn: state.turn, budget: state.budget, partyFunds: state.partyFunds, rep: state.reputation, groups: state.voterGroups.map(g=>({id:g.id,sentiment:g.sentiment})) });
 }
-function recordEvent(ev){ state.events.push(ev); }
 function updateTable(){
-  refs.dataTable.innerHTML = '';
-  state.history.forEach(h=>{
-    const ev = state.events.find(e=>e.turn===h.turn) || {};
+  const tbody = refs.dataTable;
+  tbody.innerHTML = '';
+  state.history.slice(-10).forEach(h=>{
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${h.turn}</td><td>₹${h.budget}</td><td>₹${h.partyFunds}</td><td>${h.rep}</td><td>${ev.name || '-'}</td>`;
-    refs.dataTable.appendChild(tr);
+    tr.innerHTML = `<td>${h.turn}</td><td>₹${Math.round(h.budget)}</td><td>₹${Math.round(h.partyFunds)}</td><td>${Math.round(h.rep)}</td><td>-</td>`;
+    tbody.appendChild(tr);
   });
 }
-let chart = null;
+// Chart logic (simplified)
 function resetChart(){
   const labels = [];
   const datasets = state.voterGroups.map(g=>({ label: g.name, data: [], borderColor: randomColorFor(g.id), borderWidth: 2, fill:false, tension:0.2 }));
-  const ctx = refs.voteChart.getContext('2d');
   if(chart) chart.destroy();
-  chart = new Chart(ctx, {
-    type: 'line',
-    data: { labels, datasets },
-    options: { responsive:true, maintainAspectRatio: true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true,max:100}} }
-  });
+  chart = new Chart(refs.voteChart.getContext('2d'), { type: 'line', data: { labels, datasets }, options: { responsive:true, maintainAspectRatio:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true,max:100}} } });
 }
 function updateChart(){
-  const label = `T${state.turn}`;
+  const label = `D${90-state.daysLeft}`;
   chart.data.labels.push(label);
-  const breakdown = computeVoteBreakdown();
-  chart.data.datasets.forEach(ds=>{
-    const b = breakdown.find(x=>x.name===ds.label);
-    ds.data.push(b ? b.share : 0);
+  const weighted = state.voterGroups.reduce((acc,g)=>acc + g.sentiment * g.size, 0);
+  state.voterGroups.forEach(g=>{
+    const share = weighted>0 ? (g.sentiment * g.size / weighted)*100 : (g.size*100/state.voterGroups.length);
+    const ds = chart.data.datasets.find(d=>d.label===g.name);
+    if(ds) ds.data.push(share);
   });
   if(refs.toggleSent.checked){
     const avgSent = Math.round(state.voterGroups.reduce((a,g)=>a+g.sentiment,0)/state.voterGroups.length*100);
-    chart.data.datasets.push({ label:'Avg Sentiment', data: Array(chart.data.labels.length-1).fill(null).concat([avgSent]), borderColor:'#16a34a', borderWidth:2, fill:false, tension:0.2 });
+    chart.data.datasets.push({ label:'Avg Sentiment', data: Array(chart.data.labels.length-1).fill(null).concat([avgSent]), borderColor:'#16a34a', borderWidth:2, fill:false });
   }
   if(refs.toggleFunds.checked){
     const funds = Math.round(state.partyFunds/10);
-    chart.data.datasets.push({ label:'Party Funds (scaled)', data: Array(chart.data.labels.length-1).fill(null).concat([funds]), borderColor:'#f97316', borderWidth:2, fill:false, tension:0.2 });
+    chart.data.datasets.push({ label:'Party Funds (scaled)', data: Array(chart.data.labels.length-1).fill(null).concat([funds]), borderColor:'#f97316', borderWidth:2, fill:false });
   }
   chart.update();
 }
-function computeVoteBreakdown(){
-  const weighted = state.voterGroups.reduce((acc,g)=>acc + g.sentiment * g.size, 0);
-  return state.voterGroups.map(g=>{
-    const share = weighted > 0 ? (g.sentiment * g.size / weighted) * 100 : (g.size*100/state.voterGroups.length);
-    return { id:g.id, name:g.name, share };
-  });
-}
-function randomColorFor(id){
-  const map = { youth:'#0b6efd', farmers:'#ef4444', fisher:'#06b6d4', women:'#a78bfa', seniors:'#f59e0b', business:'#10b981' };
-  return map[id] || '#64748b';
-}
-let playInterval = null;
-refs.playBtn.addEventListener('click', ()=>{
-  if(playInterval){ clearInterval(playInterval); playInterval = null; refs.playBtn.textContent = 'Play'; }
-  else { refs.playBtn.textContent = 'Pause'; playInterval = setInterval(()=> endTurn(), Number(refs.speed.value)); }
-});
-refs.stepForward.addEventListener('click', ()=> endTurn());
-refs.stepBack.addEventListener('click', ()=> {
-  if(state.history.length <= 1) return;
-  state.history.pop();
-  state.events.pop();
-  const last = state.history[state.history.length-1];
-  state.turn = last.turn;
-  state.budget = last.budget;
-  state.partyFunds = last.partyFunds;
-  state.reputation = last.rep;
-  state.voterGroups = last.groups.map(g => {
-    const arche = archetypesBase.find(a=>a.id===g.id);
-    return { ...arche, sentiment: g.sentiment, responsiveness: 0.7 };
-  });
-  renderVotersHorizontal(); updateKPIs(); resetChart();
-  state.history.forEach((h,i)=>{
-    chart.data.labels.push('T'+h.turn);
-    const breakdown = computeVoteBreakdownAtHistory(i);
-    chart.data.datasets.forEach((ds, idx)=> ds.data.push(breakdown[idx] ? breakdown[idx].share : 0));
-  });
-  chart.update();
-  updateTable();
-});
-refs.resetBtn.addEventListener('click', ()=> initSimulation());
-function computeVoteBreakdownAtHistory(index){
-  const groups = state.history[index].groups;
-  const weighted = groups.reduce((acc,g)=>acc + g.sentiment * (archetypesBase.find(a=>a.id===g.id).size), 0);
-  return groups.map(g=>({ id:g.id, name: archetypesBase.find(a=>a.id===g.id).name, share: weighted>0 ? (g.sentiment * archetypesBase.find(a=>a.id===g.id).size / weighted)*100 : 0 }));
-}
-function updateKPIs(){
-  refs.kBudget.textContent = `₹${Math.round(state.budget)}`;
-  refs.kParty.textContent = `₹${Math.round(state.partyFunds)}`;
-  refs.kRep.textContent = `${Math.round(state.reputation)}`;
-}
+function randomColorFor(id){ const map={ youth:'#0b6efd', farmers:'#ef4444', fisher:'#06b6d4', women:'#a78bfa', seniors:'#f59e0b', business:'#10b981' }; return map[id]||'#64748b'; }
 function initSimulation(){
+  if(playInterval) clearInterval(playInterval);
+  state = {
+    budget: 450, partyFunds: 400, reputation: 50, corruptionScore: 0, turn: 0, daysLeft: 90,
+    voterGroups: computeInitialVoterGroups(), history: [], events: [], gameOver: false,
+    microTargetGroup: null, opponent: { reputation: 45, partyFunds: 300, voteShareBaseline: 0.45 }
+  };
   refs.log.innerHTML = '';
-  state.voterGroups = computeInitialVoterGroups();
-  state.budget = indicators.povertyRate > 0.15 ? 450 : 520;
-  state.partyFunds = 400;
-  state.reputation = 50;
-  state.corruptionScore = 0;
-  state.turn = 0;
-  state.history = [];
-  state.events = [];
-  renderMoves();
-  renderDonors();
   renderVotersHorizontal();
+  renderMovesAndDonors();
   updateKPIs();
   pushHistory();
   resetChart();
   updateChart();
   updateTable();
-  appendLog('Simulation initialized. Actions affect sentiment instantly.');
+  updateOpponentStats();
+  refs.electionResultBadge.innerHTML = '';
+  refs.playBtn.disabled = false; refs.stepForward.disabled = false;
+  refs.turnBadge.textContent = "DAY 0 / 90";
+  appendLog("Simulation reset. 90 days to election. Use moves to win.");
 }
+function renderMovesAndDonors(){
+  refs.moves.innerHTML = '';
+  Object.keys(MOVES).forEach(k=>{
+    const m = MOVES[k];
+    const btn = document.createElement('button'); btn.className = 'btn-neon';
+    btn.innerHTML = `${m.name} — ₹${m.cost}<span class="tooltip-text">📈 Effects: ${Object.entries(m.effects).map(([g,val])=>`${g}+${Math.round(val*100)}%`).join(', ')}<br>🏷️ Indicators may improve</span>`;
+    btn.onclick = () => applyMove(k);
+    refs.moves.appendChild(btn);
+  });
+  refs.fundMoves.innerHTML = '';
+  Object.keys(FUND_MOVES).forEach(k=>{
+    const fm = FUND_MOVES[k];
+    const btn = document.createElement('button'); btn.className = 'btn-neon';
+    btn.textContent = `${fm.name} — ₹${fm.cost}`;
+    btn.onclick = () => runFundMove(k);
+    refs.fundMoves.appendChild(btn);
+  });
+  refs.donorList.innerHTML = '';
+  DONORS.forEach(d=>{
+    const div = document.createElement('div'); div.className = 'donor-item';
+    div.innerHTML = `<div><strong>${d.name}</strong><div class="sub">Max ₹${d.maxGift}</div></div><div><button class="btn-neon" style="padding:4px 12px;" onclick="simulateDirectDonation('${d.id}')">Solicit</button></div>`;
+    refs.donorList.appendChild(div);
+  });
+}
+// Micro-target toggle
+refs.toggleMicroBtn.addEventListener('click', ()=>{
+  microTargetActive = !microTargetActive;
+  if(microTargetActive){
+    const groups = state.voterGroups;
+    const groupNames = groups.map(g=>g.name).join(', ');
+    const chosen = groups[Math.floor(Math.random()*groups.length)];
+    state.microTargetGroup = { id: chosen.id, name: chosen.name };
+    refs.microTargetStatus.innerHTML = `🎯 Targeting ${chosen.name} (extra 50% cost, double effect)`;
+    refs.toggleMicroBtn.innerHTML = '<i class="fas fa-bullseye"></i> Micro-target ON';
+  } else {
+    state.microTargetGroup = null;
+    refs.microTargetStatus.innerHTML = '';
+    refs.toggleMicroBtn.innerHTML = '<i class="fas fa-bullseye"></i> Micro-target OFF';
+  }
+});
+// Event listeners
+refs.playBtn.addEventListener('click', ()=>{
+  if(playInterval){ clearInterval(playInterval); playInterval=null; refs.playBtn.textContent='Play'; }
+  else { refs.playBtn.textContent='Pause'; playInterval = setInterval(()=> endTurn(), Number(refs.speed.value)); }
+});
+refs.stepForward.addEventListener('click', endTurn);
+refs.resetBtn.addEventListener('click', initSimulation);
 document.getElementById('matchPartyBtn').addEventListener('click', requestPartyMatch);
 document.getElementById('transferTransparentBtn').addEventListener('click', ()=> transferFromParty('transparent'));
 document.getElementById('transferOpaqueBtn').addEventListener('click', ()=> transferFromParty('opaque'));
+// Floating Tips
+const tips = ["💡 Focus on high-responsiveness groups for better returns.", "💡 Micro-targeting doubles effect on one group – use before big moves.", "💡 Reputation below 30 makes fundraising hard. Protect it!", "💡 Opaque transfers risk audits – use sparingly.", "💡 Improve school & water indicators to lift youth/women sentiment.", "💡 Opponent grows daily – keep momentum!", "💡 Crises are random – keep emergency funds."];
+document.getElementById('tipButton').addEventListener('click', ()=>{
+  const randomTip = tips[Math.floor(Math.random()*tips.length)];
+  appendLog(`✨ TIP: ${randomTip}`);
+});
 initSimulation();
-window.requestPartyMatch = requestPartyMatch;
-window.transferFromParty = transferFromParty;
-window.applyMove = applyMove;
-window.runFundMove = runFundMove;
+window.applyMove = applyMove; window.runFundMove = runFundMove;
 </script>
 </body>
 </html>
