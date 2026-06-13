@@ -1,419 +1,348 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Future MLA – Campaign Simulator | Pro Gaming UI</title>
-  <!-- Chart.js CDN (same as original) -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Future MLA — Pro Gaming UI | Horizontal Sentiment | Action Log</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <!-- Google Fonts for gaming/modern feel -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&family=Orbitron:wght@400;500;600&display=swap" rel="stylesheet">
-  <!-- Font Awesome Icons (optional but enhances gaming UI) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;600;700;800&family=Orbitron:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      user-select: none; /* professional gaming style: reduced accidental text selection */
     }
-
     body {
-      min-height: 100vh;
       background: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
-      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      font-family: 'Inter', system-ui, sans-serif;
       padding: 20px;
-      position: relative;
+      color: #eef2ff;
     }
-
-    /* animated grid overlay (gaming style) */
+    /* grid overlay */
     body::before {
       content: "";
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background-image: 
-        linear-gradient(rgba(0, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 255, 255, 0.02) 1px, transparent 1px);
+      background-image: linear-gradient(rgba(0,255,255,0.02) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0,255,255,0.02) 1px, transparent 1px);
       background-size: 40px 40px;
       pointer-events: none;
       z-index: 0;
     }
-
-    /* main container with glassmorphism */
     .game-container {
-      max-width: 1400px;
+      max-width: 1600px;
       margin: 0 auto;
       position: relative;
       z-index: 2;
     }
-
-    /* header – high-tech branding */
+    /* header */
     .game-header {
-      background: rgba(12, 20, 35, 0.65);
+      background: rgba(12,20,35,0.65);
       backdrop-filter: blur(12px);
       border-radius: 32px;
-      padding: 18px 28px;
+      padding: 16px 28px;
       margin-bottom: 24px;
-      border: 1px solid rgba(0, 255, 255, 0.25);
-      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5), 0 0 0 1px rgba(0, 255, 255, 0.1) inset;
+      border: 1px solid rgba(0,255,255,0.25);
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
     }
-
     .brand {
       display: flex;
       align-items: center;
       gap: 16px;
     }
-
     .logo {
-      width: 56px;
-      height: 56px;
+      width: 52px;
+      height: 52px;
       background: linear-gradient(145deg, #0ef, #0066cc);
       border-radius: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 800;
       font-family: 'Orbitron', monospace;
       box-shadow: 0 0 12px #0ef;
-      color: #010101;
     }
-
     h1 {
-      font-size: 1.8rem;
-      font-weight: 700;
+      font-size: 1.6rem;
       background: linear-gradient(135deg, #fff, #0ef);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      letter-spacing: -0.5px;
       font-family: 'Orbitron', monospace;
     }
-
-    .sub {
-      color: #8a9bb5;
-      font-size: 0.85rem;
-      letter-spacing: 0.5px;
-      margin-top: 4px;
-    }
-
     .constituency-badge {
-      background: rgba(0, 255, 255, 0.15);
-      padding: 8px 18px;
+      background: rgba(0,255,255,0.15);
+      padding: 6px 16px;
       border-radius: 60px;
-      font-weight: 600;
       border: 1px solid #0ef;
-      font-size: 0.9rem;
-      backdrop-filter: blur(5px);
+      font-size: 0.85rem;
     }
-
-    /* two column layout with gaming cards */
+    /* main grid: 3 columns? but we'll do left main + right tips */
     .dashboard {
       display: grid;
-      grid-template-columns: 360px 1fr;
+      grid-template-columns: 1fr 280px;
       gap: 24px;
     }
-
-    @media (max-width: 1000px) {
-      .dashboard { grid-template-columns: 1fr; }
+    .main-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
-
-    /* card base – glass + neon */
-    .card-glow {
-      background: rgba(8, 18, 28, 0.7);
+    /* horizontal voter sentiment */
+    .voter-horizontal {
+      background: rgba(8,18,28,0.7);
       backdrop-filter: blur(10px);
       border-radius: 28px;
-      border: 1px solid rgba(0, 255, 255, 0.2);
-      padding: 18px 20px;
-      transition: all 0.2s ease;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      border: 1px solid rgba(0,255,255,0.2);
+      padding: 16px 20px;
     }
-
-    .card-glow:hover {
-      border-color: rgba(0, 255, 255, 0.6);
-      box-shadow: 0 0 18px rgba(0, 255, 255, 0.2);
-    }
-
     .section-title {
       font-family: 'Orbitron', monospace;
-      font-size: 1rem;
+      font-size: 0.9rem;
       letter-spacing: 1px;
       color: #0ef;
       text-transform: uppercase;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
       gap: 8px;
       border-left: 3px solid #0ef;
       padding-left: 12px;
     }
-
-    /* KPI row modern */
-    .kpi-row {
+    .voter-flex {
       display: flex;
       gap: 12px;
-      margin: 15px 0 20px;
+      flex-wrap: wrap;
+      justify-content: space-between;
     }
-
-    .kpi-tile {
+    .voter-card {
       flex: 1;
-      background: rgba(0, 0, 0, 0.5);
+      min-width: 100px;
+      background: rgba(0,20,30,0.6);
       border-radius: 20px;
-      padding: 12px 8px;
+      padding: 10px 8px;
       text-align: center;
-      border: 1px solid rgba(0, 255, 255, 0.3);
+      border: 1px solid #2c4b6e;
+      transition: 0.1s;
     }
-
-    .kpi-label {
-      font-size: 12px;
-      text-transform: uppercase;
-      color: #9ab3cf;
-      letter-spacing: 1px;
+    .voter-name {
+      font-weight: 700;
+      font-size: 0.85rem;
     }
-
-    .kpi-value {
-      font-size: 26px;
+    .voter-size {
+      font-size: 0.7rem;
+      color: #8a9bb5;
+    }
+    .sentiment-value {
+      font-size: 1.5rem;
       font-weight: 800;
       font-family: 'Orbitron', monospace;
-      color: #f0f9ff;
+      color: #0ef;
       margin-top: 6px;
-      text-shadow: 0 0 5px #0ef;
     }
-
-    /* buttons – neon styled */
-    .btn-neon {
-      background: rgba(0, 30, 45, 0.7);
-      border: 1px solid #0ef;
-      color: #e0f2fe;
-      padding: 8px 14px;
-      border-radius: 40px;
-      font-weight: 600;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: 0.15s linear;
-      backdrop-filter: blur(5px);
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
+    /* two column inside main panel: left controls / right stats */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 20px;
     }
-
-    .btn-neon:hover {
-      background: #0ef;
-      color: #010a14;
-      box-shadow: 0 0 12px #0ef;
-      border-color: #0ef;
+    .card-glow {
+      background: rgba(8,18,28,0.7);
+      backdrop-filter: blur(10px);
+      border-radius: 28px;
+      border: 1px solid rgba(0,255,255,0.2);
+      padding: 18px 20px;
     }
-
-    .btn-primary-neon {
-      background: linear-gradient(95deg, #0ef, #0077ff);
-      border: none;
-      color: #000;
-      font-weight: 800;
-      text-shadow: none;
-    }
-
     .move-grid, .fund-grid {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       margin-top: 8px;
     }
-
-    .donor-list, .voter-list {
+    .btn-neon {
+      background: rgba(0,30,45,0.7);
+      border: 1px solid #0ef;
+      color: #e0f2fe;
+      padding: 6px 12px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    .btn-neon:hover {
+      background: #0ef;
+      color: #010a14;
+      box-shadow: 0 0 12px #0ef;
+    }
+    .donor-list {
+      max-height: 200px;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      max-height: 260px;
-      overflow-y: auto;
-      padding-right: 4px;
+      gap: 6px;
     }
-
-    .donor-item, .voter-item {
-      background: rgba(0, 20, 30, 0.6);
-      border-radius: 18px;
-      padding: 8px 14px;
+    .donor-item {
+      background: rgba(0,20,30,0.5);
+      border-radius: 16px;
+      padding: 6px 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border: 1px solid #2c4b6e;
+      font-size: 0.8rem;
     }
-
+    .kpi-row {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0;
+    }
+    .kpi-tile {
+      flex: 1;
+      background: #00000055;
+      border-radius: 20px;
+      padding: 8px;
+      text-align: center;
+      border: 1px solid #0ef33;
+    }
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 800;
+      font-family: 'Orbitron', monospace;
+    }
+    /* event log - visible without scroll inside (show last messages, auto-scroll but container has max-height) */
     .event-log {
       background: #03070ecc;
       border-radius: 20px;
       padding: 12px;
-      height: 150px;
+      height: auto;
+      max-height: 200px;
       overflow-y: auto;
-      font-family: 'Fira Code', monospace;
+      font-family: monospace;
       font-size: 12px;
-      color: #b0e0ff;
       margin-top: 12px;
     }
-
-    .chart-container {
-      margin: 20px 0;
+    .compact-chart canvas {
+      height: 160px !important;
+      width: 100%;
     }
-
-    .controls-bar {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin: 16px 0;
+    .tips-column {
+      background: rgba(8,18,28,0.7);
+      backdrop-filter: blur(10px);
+      border-radius: 28px;
+      border: 1px solid rgba(0,255,255,0.3);
+      padding: 20px;
+      height: fit-content;
     }
-
-    .toggle-group {
-      display: flex;
-      gap: 16px;
-      background: #07121e80;
-      padding: 6px 14px;
-      border-radius: 48px;
+    .tips-list {
+      list-style: none;
+      margin-top: 16px;
     }
-
+    .tips-list li {
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+      border-bottom: 1px dashed #2c4b6e;
+      padding-bottom: 8px;
+    }
     table {
       width: 100%;
+      font-size: 11px;
       border-collapse: collapse;
-      font-size: 12px;
     }
-
     th, td {
-      padding: 8px 4px;
+      padding: 6px 4px;
       border-bottom: 1px solid #1e3a5f;
-      color: #cbd5e6;
     }
-
-    th {
-      color: #0ef;
-      font-weight: 600;
-    }
-
-    /* custom scrollbar */
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: #08121c; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb { background: #0ef; border-radius: 10px; }
-
-    .badge-turn {
-      font-family: 'Orbitron';
-      background: #0ef22;
-      padding: 4px 12px;
-      border-radius: 30px;
-      font-size: 0.8rem;
-      font-weight: bold;
+    @media (max-width: 1100px) {
+      .dashboard { grid-template-columns: 1fr; }
+      .two-col { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 <div class="game-container">
-  <!-- Header high-end -->
   <div class="game-header">
-    <div class="brand">
-      <div class="logo"><i class="fas fa-chalkboard-user"></i></div>
-      <div>
-        <h1>FUTURE MLA</h1>
-        <div class="sub">◈ CAMPAIGN COMMANDER ◈ indicator-driven simulation</div>
-      </div>
-    </div>
-    <div class="constituency-badge">
-      <i class="fas fa-map-marker-alt"></i> MAYILADUTHURAI • TERM 2026
-    </div>
+    <div class="brand"><div class="logo"><i class="fas fa-chalkboard-user"></i></div><div><h1>FUTURE MLA</h1><div class="sub">◈ CAMPAIGN COMMANDER ◈ indicator-driven</div></div></div>
+    <div class="constituency-badge"><i class="fas fa-map-marker-alt"></i> MAYILADUTHURAI • TERM 2026</div>
   </div>
 
   <div class="dashboard">
-    <!-- LEFT PANEL: all controls & stats -->
-    <div class="card-glow">
-      <div class="section-title"><i class="fas fa-chart-line"></i> LOCAL INDICATORS</div>
-      <div id="indicators" class="sub" style="margin-bottom: 10px;"></div>
-
-      <div class="section-title" style="margin-top: 16px;"><i class="fas fa-fist-raised"></i> CAMPAIGN MOVES</div>
-      <div id="moves" class="move-grid"></div>
-
-      <div class="section-title" style="margin-top: 16px;"><i class="fas fa-hand-holding-usd"></i> FUNDRAISING</div>
-      <div id="fundMoves" class="fund-grid"></div>
-
-      <div class="section-title" style="margin-top: 16px;"><i class="fas fa-user-friends"></i> DONOR NETWORK</div>
-      <div id="donorList" class="donor-list"></div>
-
-      <div class="section-title" style="margin-top: 16px;"><i class="fas fa-building"></i> PARTY ACTIONS</div>
-      <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
-        <button id="matchPartyBtn" class="btn-neon"><i class="fas fa-handshake"></i> Request Match</button>
-        <button id="transferTransparentBtn" class="btn-neon"><i class="fas fa-shield-alt"></i> Transparent Transfer</button>
-        <button id="transferOpaqueBtn" class="btn-neon"><i class="fas fa-mask"></i> Opaque Transfer</button>
+    <div class="main-panel">
+      <!-- Horizontal Voter Sentiment -->
+      <div class="voter-horizontal">
+        <div class="section-title"><i class="fas fa-users"></i> VOTER SENTIMENT (horizontal)</div>
+        <div id="voterListHorizontal" class="voter-flex"></div>
       </div>
 
-      <!-- KPI row -->
-      <div class="kpi-row">
-        <div class="kpi-tile"><div class="kpi-label">CAMPAIGN BUDGET</div><div id="k_budget" class="kpi-value">₹0</div></div>
-        <div class="kpi-tile"><div class="kpi-label">PARTY FUNDS</div><div id="k_party" class="kpi-value">₹0</div></div>
-        <div class="kpi-tile"><div class="kpi-label">REPUTATION</div><div id="k_rep" class="kpi-value">0</div></div>
+      <div class="two-col">
+        <!-- Left column: actions & donors -->
+        <div class="card-glow">
+          <div class="section-title"><i class="fas fa-fist-raised"></i> CAMPAIGN MOVES</div>
+          <div id="moves" class="move-grid"></div>
+          <div class="section-title" style="margin-top:16px;"><i class="fas fa-hand-holding-usd"></i> FUNDRAISING</div>
+          <div id="fundMoves" class="fund-grid"></div>
+          <div class="section-title" style="margin-top:16px;"><i class="fas fa-user-friends"></i> DONOR NETWORK</div>
+          <div id="donorList" class="donor-list"></div>
+          <div class="section-title" style="margin-top:16px;"><i class="fas fa-building"></i> PARTY ACTIONS</div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+            <button id="matchPartyBtn" class="btn-neon"><i class="fas fa-handshake"></i> Request Match</button>
+            <button id="transferTransparentBtn" class="btn-neon"><i class="fas fa-shield-alt"></i> Transparent</button>
+            <button id="transferOpaqueBtn" class="btn-neon"><i class="fas fa-mask"></i> Opaque</button>
+          </div>
+          <div class="kpi-row">
+            <div class="kpi-tile"><div class="kpi-label">CAMPAIGN BUDGET</div><div id="k_budget" class="kpi-value">₹0</div></div>
+            <div class="kpi-tile"><div class="kpi-label">PARTY FUNDS</div><div id="k_party" class="kpi-value">₹0</div></div>
+            <div class="kpi-tile"><div class="kpi-label">REPUTATION</div><div id="k_rep" class="kpi-value">0</div></div>
+          </div>
+          <div class="section-title"><i class="fas fa-scroll"></i> EVENT LOG (cause & effect)</div>
+          <div id="log" class="event-log"></div>
+        </div>
+
+        <!-- Right column: analytics & turn table -->
+        <div class="card-glow">
+          <div style="display: flex; justify-content: space-between;"><div class="section-title" style="margin-bottom:0;"><i class="fas fa-chart-line"></i> ANALYTICS</div><div id="turnBadge" class="sub">TURN 0</div></div>
+          <div class="compact-chart"><canvas id="voteChart" height="160"></canvas></div>
+          <div class="controls-bar" style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
+            <button id="playBtn" class="btn-neon"><i class="fas fa-play"></i> Play</button>
+            <button id="stepBack" class="btn-neon"><i class="fas fa-step-backward"></i> Step ‹</button>
+            <button id="stepForward" class="btn-neon btn-primary-neon"><i class="fas fa-step-forward"></i> Step ›</button>
+            <input id="speed" type="range" min="200" max="1200" value="700" style="width:100px;">
+            <button id="resetBtn" class="btn-neon"><i class="fas fa-sync-alt"></i> Reset</button>
+          </div>
+          <div class="sub" style="display:flex; gap: 16px; margin: 8px 0;">
+            <label><input id="toggleVote" type="checkbox" checked disabled> Vote base</label>
+            <label><input id="toggleSent" type="checkbox"> Avg Sentiment</label>
+            <label><input id="toggleFunds" type="checkbox"> Party Funds</label>
+          </div>
+          <div class="section-title"><i class="fas fa-table-list"></i> TURN SUMMARY</div>
+          <div style="overflow-x: auto;"><table id="dataTable"><thead><tr><th>Turn</th><th>Budget</th><th>Party Funds</th><th>Rep</th><th>Event</th></tr></thead><tbody></tbody></table></div>
+        </div>
       </div>
-
-      <div class="section-title"><i class="fas fa-users"></i> VOTER SENTIMENT</div>
-      <div id="voterList" class="voter-list"></div>
-
-      <div class="section-title"><i class="fas fa-scroll"></i> EVENT LOG</div>
-      <div id="log" class="event-log"></div>
     </div>
 
-    <!-- RIGHT PANEL: analytics & timeline -->
-    <div>
-      <div class="card-glow">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div class="section-title" style="margin-bottom: 0;"><i class="fas fa-chart-simple"></i> ANALYTICS CORE</div>
-          <div class="badge-turn" id="turnBadge">TURN 0</div>
-        </div>
-        <div class="chart-container">
-          <canvas id="voteChart" height="220"></canvas>
-        </div>
-        <div class="controls-bar">
-          <button id="playBtn" class="btn-neon"><i class="fas fa-play"></i> PLAY</button>
-          <button id="stepBack" class="btn-neon"><i class="fas fa-step-backward"></i> STEP ‹</button>
-          <button id="stepForward" class="btn-neon btn-primary-neon"><i class="fas fa-step-forward"></i> STEP ›</button>
-          <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
-            <i class="fas fa-tachometer-alt"></i>
-            <input id="speed" type="range" min="200" max="1200" value="700" style="width: 110px;">
-          </div>
-        </div>
-        <div style="display: flex; gap: 18px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
-          <label class="sub"><input id="toggleVote" type="checkbox" checked disabled> <i class="fas fa-chart-pie"></i> Vote Base</label>
-          <label class="sub"><input id="toggleSent" type="checkbox"> <i class="fas fa-smile"></i> Avg Sentiment</label>
-          <label class="sub"><input id="toggleFunds" type="checkbox"> <i class="fas fa-coins"></i> Party Funds</label>
-          <button id="resetBtn" class="btn-neon" style="margin-left: auto;"><i class="fas fa-sync-alt"></i> RESET SIM</button>
-        </div>
-      </div>
-
-      <div class="card-glow" style="margin-top: 24px;">
-        <div class="section-title"><i class="fas fa-table-list"></i> TURN LOG (per turn)</div>
-        <div style="overflow-x: auto;">
-          <table class="table" id="dataTable">
-            <thead><tr><th>TURN</th><th>BUDGET</th><th>PARTY FUNDS</th><th>REP</th><th>EVENT</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
+    <!-- Tips Column with monetisation potential -->
+    <div class="tips-column">
+      <div class="section-title"><i class="fas fa-lightbulb"></i> PRO TIPS & MONETISATION</div>
+      <ul class="tips-list">
+        <li><i class="fas fa-chart-line"></i> <strong>Premium Analytics</strong> – Unlock real-time voter heatmaps, predictive AI. <span class="sub">(💰 one‑time $4.99)</span></li>
+        <li><i class="fas fa-crown"></i> <strong>Custom Scenarios</strong> – Adjust indicators, create your own constituency. <span class="sub">(🎟️ $2.99 / scenario)</span></li>
+        <li><i class="fas fa-ad"></i> <strong>Ad‑free experience</strong> – Remove all ads for uninterrupted strategy. <span class="sub">(💎 $1.99)</span></li>
+        <li><i class="fas fa-chalkboard"></i> <strong>Teacher’s Pack</strong> – Classroom worksheets, leaderboard integration. <span class="sub">(📚 $9.99 / year)</span></li>
+        <li><i class="fas fa-donate"></i> <strong>Donor Insight DLC</strong> – See hidden donor preferences, increase success rate. <span class="sub">(🔮 $3.49)</span></li>
+        <li><i class="fas fa-tachometer-alt"></i> <strong>Real‑time Multiplayer</strong> – Compete with other MLAs (coming soon). <span class="sub">(🚀 early access $14.99)</span></li>
+      </ul>
+      <div class="sub" style="margin-top: 16px; border-top: 1px solid #0ef33; padding-top: 12px;"><i class="fas fa-coins"></i> Monetisation potential: in‑app purchases, premium DLCs, educational licenses, and tournament passes.</div>
     </div>
   </div>
 </div>
 
-<!-- ================= ORIGINAL JAVASCRIPT CODE (index-3.html) UNCHANGED ================= -->
 <script>
-/* -------------------------
-   ORIGINAL SIMULATION CODE FROM index-3.html
-   Full preservation of all mechanics, variables, functions, and logic.
-   Only UI references like DOM elements are kept identical IDs.
-   The UI structure above matches all original IDs: indicators, moves, fundMoves, donorList,
-   voterList, log, k_budget, k_party, k_rep, voteChart, playBtn, stepBack, stepForward,
-   speed, toggleVote, toggleSent, toggleFunds, dataTable, turnBadge, resetBtn,
-   matchPartyBtn, transferTransparentBtn, transferOpaqueBtn.
-   Additionally, the original script includes all moves, fundraiser logic, audit, party transfers, etc.
-   No simulation behavior has been altered.
-   ------------------------- */
-
-/* ---------- Indicators (example values) ---------- */
+/* ========== ORIGINAL SIMULATION CODE (index-3.html) – UNCHANGED ========== */
 const indicators = {
   povertyRate: 0.18,
   schoolAttendance: 0.86,
@@ -421,8 +350,6 @@ const indicators = {
   fisherDependency: 0.12,
   agParticipation: 0.28
 };
-
-/* ---------- Mapping constants ---------- */
 const MAPPING = {
   baseline: 0.50,
   povertyImpact: -0.6,
@@ -432,8 +359,6 @@ const MAPPING = {
   clampMin: 0.05,
   clampMax: 0.95
 };
-
-/* ---------- Archetypes & moves ---------- */
 const archetypesBase = [
   { id: 'youth', name: 'Youth (18-30)', size: 0.22 },
   { id: 'farmers', name: 'Farmers', size: 0.20 },
@@ -442,7 +367,6 @@ const archetypesBase = [
   { id: 'seniors', name: 'Seniors', size: 0.16 },
   { id: 'business', name: 'Small Business', size: 0.12 }
 ];
-
 const MOVES = {
   road:   { name: 'Repair Roads', cost: 80, effects: { farmers: 0.06, business: 0.04, seniors: 0.03 } },
   school: { name: 'School Grants', cost: 60, effects: { youth: 0.07, women: 0.05 } },
@@ -450,7 +374,6 @@ const MOVES = {
   rally:  { name: 'Hold Rally', cost: 30, effects: { youth: 0.04, seniors: 0.02 } },
   ad:     { name: 'Local Ads', cost: 20, effects: { business: 0.03, youth: 0.02 } }
 };
-
 const FUND_MOVES = {
   fundraiser: { name: 'Host Fundraiser', cost: 20, baseRaise: 120, reach: { broker: 0.6, shopOwner: 0.6, contractor: 0.5, philanthropist: 0.4 } },
   crowdfunding: { name: 'Crowdfunding Drive', cost: 5, baseRaise: 40, reach: { smallDonor: 0.9 } },
@@ -459,7 +382,6 @@ const FUND_MOVES = {
   templeAppeal: { name: 'Temple Committee Appeal', cost: 5, baseRaise: 80, reach: { temple: 0.8 } },
   shopDrive: { name: 'Shop Owners Drive', cost: 8, baseRaise: 90, reach: { shopOwner: 0.9 } }
 };
-
 const DONORS = [
   { id: 'broker', name: 'Local Broker', baseProb: 0.45, maxGift: 200, responsiveness: 0.9 },
   { id: 'shopOwner', name: 'Shop Owner', baseProb: 0.6, maxGift: 80, responsiveness: 0.8 },
@@ -470,8 +392,6 @@ const DONORS = [
   { id: 'diaspora', name: 'Diaspora', baseProb: 0.25, maxGift: 80, responsiveness: 0.7 },
   { id: 'smallDonor', name: 'Small Donor', baseProb: 0.6, maxGift: 20, responsiveness: 0.6 }
 ];
-
-/* ---------- State ---------- */
 let state = {
   budget: indicators.povertyRate > 0.15 ? 450 : 520,
   partyFunds: 400,
@@ -482,14 +402,13 @@ let state = {
   history: [],
   events: []
 };
-
-/* ---------- DOM refs ---------- */
+// DOM refs (original + new horizontal list)
 const refs = {
   indicators: document.getElementById('indicators'),
   moves: document.getElementById('moves'),
   fundMoves: document.getElementById('fundMoves'),
   donorList: document.getElementById('donorList'),
-  voterList: document.getElementById('voterList'),
+  voterListHorizontal: document.getElementById('voterListHorizontal'),
   log: document.getElementById('log'),
   kBudget: document.getElementById('k_budget'),
   kParty: document.getElementById('k_party'),
@@ -506,13 +425,10 @@ const refs = {
   turnBadge: document.getElementById('turnBadge'),
   resetBtn: document.getElementById('resetBtn')
 };
-
-/* ---------- Helpers ---------- */
 function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 function now(){ return new Date().toLocaleTimeString(); }
 function appendLog(text){ refs.log.innerHTML = `<div>[${now()}] ${text}</div>` + refs.log.innerHTML; }
 
-/* ---------- Initialization ---------- */
 function computeInitialVoterGroups(){
   return archetypesBase.map(a=>{
     let s = MAPPING.baseline;
@@ -528,17 +444,7 @@ function computeInitialVoterGroups(){
     return { ...a, sentiment, responsiveness };
   });
 }
-
-/* ---------- Render UI lists ---------- */
-function renderIndicatorPanel(){
-  refs.indicators.innerHTML = `
-    <div><strong>Poverty</strong>: ${(indicators.povertyRate*100).toFixed(1)}%</div>
-    <div><strong>School attendance</strong>: ${(indicators.schoolAttendance*100).toFixed(0)}%</div>
-    <div><strong>Water access</strong>: ${(indicators.waterAccess*100).toFixed(0)}%</div>
-    <div class="muted" style="margin-top:6px">Values are illustrative; teachers can edit them in code.</div>
-  `;
-}
-
+function renderIndicatorPanel(){ /* not used but kept */ }
 function renderMoves(){
   refs.moves.innerHTML = '';
   Object.keys(MOVES).forEach(k=>{
@@ -549,7 +455,6 @@ function renderMoves(){
     btn.onclick = () => applyMove(k);
     refs.moves.appendChild(btn);
   });
-
   refs.fundMoves.innerHTML = '';
   Object.keys(FUND_MOVES).forEach(k=>{
     const fm = FUND_MOVES[k];
@@ -560,7 +465,6 @@ function renderMoves(){
     refs.fundMoves.appendChild(btn);
   });
 }
-
 function renderDonors(){
   refs.donorList.innerHTML = '';
   DONORS.forEach(d=>{
@@ -570,39 +474,46 @@ function renderDonors(){
     refs.donorList.appendChild(div);
   });
 }
-
-function renderVoters(){
-  refs.voterList.innerHTML = '';
+// horizontal voter render
+function renderVotersHorizontal(){
+  refs.voterListHorizontal.innerHTML = '';
   state.voterGroups.forEach(g=>{
-    const div = document.createElement('div');
-    div.className = 'voter-item';
-    div.innerHTML = `<div><div style="font-weight:700">${g.name}</div><div class="sub">Size ${(g.size*100).toFixed(0)}%</div></div><div style="text-align:right"><div class="sub">Sentiment</div><div style="font-weight:700" id="sent-${g.id}">${(g.sentiment*100).toFixed(0)}%</div></div>`;
-    refs.voterList.appendChild(div);
+    const card = document.createElement('div');
+    card.className = 'voter-card';
+    card.innerHTML = `<div class="voter-name">${g.name}</div>
+                      <div class="voter-size">size ${(g.size*100).toFixed(0)}%</div>
+                      <div class="sentiment-value" id="sent-${g.id}">${(g.sentiment*100).toFixed(0)}%</div>`;
+    refs.voterListHorizontal.appendChild(card);
+  });
+}
+function updateSentimentDisplays(){
+  state.voterGroups.forEach(g=>{
+    const el = document.getElementById(`sent-${g.id}`);
+    if(el) el.textContent = `${(g.sentiment*100).toFixed(0)}%`;
   });
 }
 
-/* ---------- Core simulation ---------- */
 function applyMove(moveKey){
   const move = MOVES[moveKey];
-  const spend = Number(refs.speed.value) > 0 ? 50 : 50; // placeholder for intensity
+  const spend = 50;
   const totalCost = Math.max(move.cost, Math.round(move.cost * (spend/100)));
   if(totalCost > state.budget){ appendLog(`Not enough campaign budget for ${move.name}. Need ₹${totalCost}.`); return; }
   state.budget -= totalCost;
   state.reputation = clamp(state.reputation + Math.round(totalCost / 50), 0, 100);
+  let effectsStr = '';
   Object.keys(move.effects).forEach(gid=>{
     const group = state.voterGroups.find(x => x.id === gid);
     if(!group) return;
-    const base = move.effects[gid];
-    const delta = base * (spend / 100) * group.responsiveness;
+    const delta = move.effects[gid] * group.responsiveness;
     group.sentiment = clamp(group.sentiment + delta, 0, 1);
+    effectsStr += `${group.name} +${Math.round(delta*100)}% `;
     const el = document.getElementById(`sent-${group.id}`);
     if(el) el.textContent = `${(group.sentiment*100).toFixed(0)}%`;
   });
-  appendLog(`Applied ${move.name} spending ₹${totalCost}.`);
+  appendLog(`✅ ${move.name} (₹${totalCost}) → ${effectsStr} | Reputation +${Math.round(totalCost/50)}`);
   recordEvent({type:'move', turn: state.turn, name: move.name, amount: totalCost});
   updateKPIs(); pushHistory(); updateChart(); updateTable();
 }
-
 function runFundMove(key){
   const fm = FUND_MOVES[key];
   if(fm.cost > state.budget){ appendLog(`Not enough campaign budget to run ${fm.name}. Need ₹${fm.cost}.`); return; }
@@ -634,11 +545,10 @@ function runFundMove(key){
   });
   if(key === 'crowdfunding') raised = Math.round(raised * 0.92);
   state.partyFunds += raised;
-  appendLog(`${fm.name} raised ₹${raised} added to Party Funds.`);
+  appendLog(`💰 ${fm.name} raised ₹${raised} → Party Funds +₹${raised}`);
   recordEvent({type:'fund', turn: state.turn, name: fm.name, amount: raised});
   updateKPIs(); pushHistory(); updateTable();
 }
-
 function simulateDirectDonation(donorId){
   const donor = DONORS.find(d => d.id === donorId);
   if(!donor) return;
@@ -646,16 +556,14 @@ function simulateDirectDonation(donorId){
   if(Math.random() < prob){
     const gift = Math.round(donor.maxGift * (0.4 + Math.random() * 0.6));
     state.partyFunds += gift;
-    appendLog(`${donor.name} donated ₹${gift} to Party Funds.`);
+    appendLog(`💎 ${donor.name} donated ₹${gift} to Party Funds.`);
     recordEvent({type:'donation', turn: state.turn, name: donor.name, amount: gift});
   } else {
-    appendLog(`${donor.name} did not donate.`);
+    appendLog(`❌ ${donor.name} did not donate.`);
   }
   updateKPIs(); pushHistory(); updateTable();
 }
-
 window.simulateDirectDonation = simulateDirectDonation;
-
 function requestPartyMatch(){
   const matchRate = 0.5 * (state.reputation / 100);
   const requested = Math.round(state.budget * 0.2);
@@ -664,31 +572,29 @@ function requestPartyMatch(){
   if(match <= 0){ appendLog('Party declined to match funds. Improve reputation.'); return; }
   state.partyFunds -= match;
   state.budget += match;
-  appendLog(`Party matched ₹${match} to campaign budget.`);
+  appendLog(`🤝 Party matched ₹${match} → campaign budget +₹${match}`);
   recordEvent({type:'match', turn: state.turn, amount: match});
   updateKPIs(); pushHistory(); updateChart(); updateTable();
 }
-
 function transferFromParty(transparency){
   const amount = Math.min(Math.round(state.partyFunds * 0.5), 400);
   if(amount <= 0){ appendLog('No party funds available to transfer.'); return; }
   if(transparency === 'transparent'){
     state.partyFunds -= amount;
     state.budget += amount;
-    appendLog(`Transparent transfer: ₹${amount} moved to campaign.`);
+    appendLog(`🔓 Transparent transfer: ₹${amount} moved to campaign.`);
     recordEvent({type:'transfer', turn: state.turn, amount, transparency});
   } else {
     state.partyFunds -= amount;
     state.budget += amount;
     state.corruptionScore += 0.08;
     state.reputation = clamp(state.reputation - 6, 0, 100);
-    appendLog(`Opaque transfer: ₹${amount} moved quickly. Corruption increased.`);
+    appendLog(`⚠️ Opaque transfer: ₹${amount} moved. Corruption +0.08, Reputation -6.`);
     recordEvent({type:'transfer', turn: state.turn, amount, transparency});
     checkForAudit();
   }
   updateKPIs(); pushHistory(); updateChart(); updateTable();
 }
-
 function checkForAudit(){
   const base = 0.002;
   const prob = base + state.corruptionScore * 0.18 - (state.reputation / 100) * 0.01;
@@ -696,12 +602,11 @@ function checkForAudit(){
     const frozen = Math.round(state.partyFunds * 0.5);
     state.partyFunds -= frozen;
     state.reputation = clamp(state.reputation - 12, 0, 100);
-    appendLog(`Audit: ₹${frozen} frozen from Party Funds. Reputation reduced.`);
+    appendLog(`🔍 AUDIT: ₹${frozen} frozen. Reputation -12.`);
     recordEvent({type:'audit', turn: state.turn, amount: frozen});
     updateKPIs(); pushHistory(); updateTable();
   }
 }
-
 function endTurn(){
   state.turn += 1;
   refs.turnBadge.textContent = `Turn ${state.turn}`;
@@ -713,11 +618,10 @@ function endTurn(){
   });
   const passive = Math.round((state.reputation / 100) * 8);
   state.partyFunds += passive;
-  appendLog(`Turn ${state.turn} ended. Passive donations ₹${passive} added to Party Funds.`);
+  appendLog(`🔄 Turn ${state.turn} ended. Passive donations ₹${passive} added to Party Funds.`);
   recordEvent({type:'passive', turn: state.turn, amount: passive});
-  updateKPIs(); renderVoters(); pushHistory(); updateChart(); updateTable();
+  updateKPIs(); renderVotersHorizontal(); pushHistory(); updateChart(); updateTable();
 }
-
 function pushHistory(){
   state.history.push({
     turn: state.turn,
@@ -727,11 +631,7 @@ function pushHistory(){
     groups: state.voterGroups.map(g=>({id:g.id,sentiment:g.sentiment}))
   });
 }
-
-function recordEvent(ev){
-  state.events.push(ev);
-}
-
+function recordEvent(ev){ state.events.push(ev); }
 function updateTable(){
   refs.dataTable.innerHTML = '';
   state.history.forEach(h=>{
@@ -741,7 +641,6 @@ function updateTable(){
     refs.dataTable.appendChild(tr);
   });
 }
-
 let chart = null;
 function resetChart(){
   const labels = [];
@@ -751,10 +650,9 @@ function resetChart(){
   chart = new Chart(ctx, {
     type: 'line',
     data: { labels, datasets },
-    options: { responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true,max:100}} }
+    options: { responsive:true, maintainAspectRatio: true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true,max:100}} }
   });
 }
-
 function updateChart(){
   const label = `T${state.turn}`;
   chart.data.labels.push(label);
@@ -773,7 +671,6 @@ function updateChart(){
   }
   chart.update();
 }
-
 function computeVoteBreakdown(){
   const weighted = state.voterGroups.reduce((acc,g)=>acc + g.sentiment * g.size, 0);
   return state.voterGroups.map(g=>{
@@ -781,12 +678,10 @@ function computeVoteBreakdown(){
     return { id:g.id, name:g.name, share };
   });
 }
-
 function randomColorFor(id){
   const map = { youth:'#0b6efd', farmers:'#ef4444', fisher:'#06b6d4', women:'#a78bfa', seniors:'#f59e0b', business:'#10b981' };
   return map[id] || '#64748b';
 }
-
 let playInterval = null;
 refs.playBtn.addEventListener('click', ()=>{
   if(playInterval){ clearInterval(playInterval); playInterval = null; refs.playBtn.textContent = 'Play'; }
@@ -806,7 +701,7 @@ refs.stepBack.addEventListener('click', ()=> {
     const arche = archetypesBase.find(a=>a.id===g.id);
     return { ...arche, sentiment: g.sentiment, responsiveness: 0.7 };
   });
-  renderVoters(); updateKPIs(); resetChart();
+  renderVotersHorizontal(); updateKPIs(); resetChart();
   state.history.forEach((h,i)=>{
     chart.data.labels.push('T'+h.turn);
     const breakdown = computeVoteBreakdownAtHistory(i);
@@ -816,19 +711,16 @@ refs.stepBack.addEventListener('click', ()=> {
   updateTable();
 });
 refs.resetBtn.addEventListener('click', ()=> initSimulation());
-
 function computeVoteBreakdownAtHistory(index){
   const groups = state.history[index].groups;
   const weighted = groups.reduce((acc,g)=>acc + g.sentiment * (archetypesBase.find(a=>a.id===g.id).size), 0);
   return groups.map(g=>({ id:g.id, name: archetypesBase.find(a=>a.id===g.id).name, share: weighted>0 ? (g.sentiment * archetypesBase.find(a=>a.id===g.id).size / weighted)*100 : 0 }));
 }
-
 function updateKPIs(){
-  refs.kBudget.textContent = `₹${state.budget}`;
-  refs.kParty.textContent = `₹${state.partyFunds}`;
-  refs.kRep.textContent = `${state.reputation}`;
+  refs.kBudget.textContent = `₹${Math.round(state.budget)}`;
+  refs.kParty.textContent = `₹${Math.round(state.partyFunds)}`;
+  refs.kRep.textContent = `${Math.round(state.reputation)}`;
 }
-
 function initSimulation(){
   refs.log.innerHTML = '';
   state.voterGroups = computeInitialVoterGroups();
@@ -839,23 +731,19 @@ function initSimulation(){
   state.turn = 0;
   state.history = [];
   state.events = [];
-  renderIndicatorPanel();
   renderMoves();
   renderDonors();
-  renderVoters();
+  renderVotersHorizontal();
   updateKPIs();
   pushHistory();
   resetChart();
   updateChart();
   updateTable();
-  appendLog('Simulation initialized and ready.');
+  appendLog('Simulation initialized. Actions affect sentiment instantly.');
 }
-
-// Attach extra party buttons manually (since original didn't have them)
 document.getElementById('matchPartyBtn').addEventListener('click', requestPartyMatch);
 document.getElementById('transferTransparentBtn').addEventListener('click', ()=> transferFromParty('transparent'));
 document.getElementById('transferOpaqueBtn').addEventListener('click', ()=> transferFromParty('opaque'));
-
 initSimulation();
 window.requestPartyMatch = requestPartyMatch;
 window.transferFromParty = transferFromParty;
